@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+regenerate_bazel_completion () {
+    set -e
+    pushd $1
+    rm ~/.bazelcomplete
+
+    curl -fsSL https://raw.githubusercontent.com/bazelbuild/bazel/$(cat .bazelversion)/scripts/bazel-complete-header.bash >> ~/.bazelcomplete
+    curl -fsSL https://raw.githubusercontent.com/bazelbuild/bazel/$(cat .bazelversion)/scripts/bazel-complete-template.bash >> ~/.bazelcomplete
+    bazel help completion >> ~/.bazelcomplete
+    popd
+    source ~/.bazelcomplete
+}
+
+if [ -f ~/.bazelcomplete ]; then
+    source ~/.bazelcomplete
+fi
