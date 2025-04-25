@@ -41,6 +41,7 @@
         name: "{{ item }}"
         state: present
       with_items:
+        - ansible-lint
         - wl-clipboard
         - ripgrep
         - curl
