@@ -7,20 +7,20 @@
   tasks:
     - name: Download nvim
       get_url:
-        url: https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/nvim-linux64.tar.gz
-        dest: "{{ inventory_dir }}/tarballs/nvim-linux64.tar"
+        url: https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/nvim-linux-x86_64.tar.gz
+        dest: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
       register: nvim_download
 
     - name: Extract nvim
       unarchive:
-        src: "{{ inventory_dir }}/tarballs/nvim-linux64.tar"
+        src: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
       when: nvim_download.changed
 
     - name: Link nvim installation
       file:
-        src: "{{ inventory_dir }}/tarballs/nvim-linux64/bin/nvim"
+        src: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64/bin/nvim"
         dest: "{{ ansible_env.HOME }}/.local/bin/nvim"
         state: link
 
