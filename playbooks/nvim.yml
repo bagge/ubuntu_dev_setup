@@ -9,14 +9,12 @@
       get_url:
         url: https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/nvim-linux-x86_64.tar.gz
         dest: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
-      register: nvim_download
 
     - name: Extract nvim
       unarchive:
         src: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
-      when: nvim_download.changed
 
     - name: Link nvim installation
       file:
@@ -80,14 +78,12 @@
       get_url:
         url: https://golang.org/dl/{{ golang_tar }}.gz
         dest: "{{ inventory_dir }}/tarballs/{{ golang_tar }}"
-      register: golang_download
 
     - name: Extract golang
       unarchive:
         src: "{{ inventory_dir }}/tarballs/{{ golang_tar }}"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
-      when: golang_download.changed
 
     - name: Enable golang bashrc snippet
       file:

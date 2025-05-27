@@ -13,14 +13,12 @@
       get_url:
         url: "https://github.com/kovidgoyal/kitty/releases/download/v{{ kitty_version }}/kitty-{{ kitty_version }}-x86_64.txz"
         dest: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
-      register: download_kitty
 
     - name: Extract kitty tarball
       unarchive:
         src: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
         dest: "{{ inventory_dir }}/tarballs/kitty.app"
         remote_src: true
-        creates: "{{ inventory_dir }}/tarballs/kitty.app/bin"
 
     - name: Fix kitty path in desktop files
       replace:

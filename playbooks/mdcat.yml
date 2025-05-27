@@ -7,14 +7,12 @@
       get_url:
         url: "https://github.com/swsnr/mdcat/releases/download/mdcat-2.6.1/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar"
-      register: mdcat_download
 
     - name: Extract mdcat
       unarchive:
         src: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
-      when: mdcat_download.changed
 
     - name: Link mdcat
       file:
