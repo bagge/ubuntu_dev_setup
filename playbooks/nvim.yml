@@ -46,7 +46,7 @@
 
     - name: Do tool installation in nvim
       shell: >
-        nvim --headless -c 'lua m = require("mason").setup()' -c 'MasonInstall shellcheck shfmt stylua gofumpt goimports' -c 'qall'
+        nvim --headless -c 'lua m = require("mason").setup()' -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt goimports lua-language-server ansible-language-server bzl bash-language-server efm' -c 'qall'
       args:
         executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
