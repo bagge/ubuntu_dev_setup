@@ -9,8 +9,6 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-#sudo apt-get install -y python3-pip
-#pip3 install --user ansible-lint
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -19,14 +17,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ansible-lint
-      - name: Check Ansible version
-        run: ansible --version
-      - name: Check Ansible-lint version
-        run: ansible-lint --version
-      - name: Check other dependencies
-        run: |
-          find / -name ansible 2>/dev/null
+          sudo apt-get install -y pipx
+          pipx install --user ansible-lint
       - name: Run linter
         run: |
           ansible-lint setup.yml
