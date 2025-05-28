@@ -7,12 +7,13 @@
       file:
         path: "{{ inventory_dir }}/tarballs/kitty.app"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Download kitty release
       get_url:
         url: "https://github.com/kovidgoyal/kitty/releases/download/v{{ kitty_version }}/kitty-{{ kitty_version }}-x86_64.txz"
         dest: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
+        mode: "0644"
 
     - name: Extract kitty tarball
       unarchive:
@@ -42,13 +43,13 @@
       file:
         path: "{{ ansible_env.HOME }}/.local/share/applications"
         state: directory
-        mode: 0755
+        mode: "0775"
 
     - name: Install kitty desktop file
       copy:
         src: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
         dest: "{{ ansible_env.HOME }}/.local/share/applications/{{ item }}"
-        mode: 0644
+        mode: "0644"
       with_items:
         - kitty.desktop
         - kitty-open.desktop
@@ -58,7 +59,7 @@
         content: |
           kitty.desktop
         dest: "{{ ansible_env.HOME }}/.config/xdg-terminals.list"
-        mode: 0644
+        mode: "0644"
 
     - name: Configure gnome to use kitty as default terminal
       command: gsettings set org.gnome.desktop.default-applications.terminal exec "{{ ansible_env.HOME }}/.local/bin/kitty"
@@ -68,7 +69,7 @@
       file:
         path: "{{ ansible_env.HOME }}/.config/kitty"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Install kitty configuration
       file:
@@ -86,7 +87,7 @@
       file:
         dest: "{{ ansible_env.HOME }}/.local/bin"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Link kitty binaries
       file:

@@ -19,7 +19,7 @@
       file:
         path: "{{ inventory_dir }}/repos/bash-it/enabled"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Enable bash-it extras
       file:

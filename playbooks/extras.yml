@@ -40,6 +40,7 @@
       get_url:
         url: "https://dl.google.com/linux/direct/{{ chrome_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
+        mode: "0644"
 
     - name: Install google-chrome-stable
       become: true
@@ -51,6 +52,7 @@
       get_url:
         url: "{{ horizon_url }}/{{ horizon_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ horizon_deb }}"
+        mode: "0644"
 
     - name: Install vmware-horizon-client
       become: true

@@ -18,7 +18,7 @@
       file:
         path: "{{ ansible_env.HOME }}/.gitignore"
         state: touch
-        mode: 0644
+        mode: "0644"
       when: not gitignore.stat.exists
 
     - name: Add go.sum to global gitignore

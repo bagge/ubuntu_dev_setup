@@ -13,7 +13,7 @@
       file:
         path: "{{ ansible_env.HOME }}/.config/ranger"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Link ranger config
       file:

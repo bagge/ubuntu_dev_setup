@@ -7,12 +7,13 @@
       file:
         path: "{{ ansible_env.HOME }}/.local/share/fonts"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Download fonts
       get_url:
         url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip"
         dest: "{{ inventory_dir }}/tarballs/Hack.zip"
+        mode: "0644"
 
     - name: Extract fonts
       unarchive:

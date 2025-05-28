@@ -9,6 +9,7 @@
       get_url:
         url: https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/nvim-linux-x86_64.tar.gz
         dest: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
+        mode: "0644"
 
     - name: Extract nvim
       unarchive:
@@ -46,7 +47,12 @@
 
     - name: Do tool installation in nvim
       shell: >
-        nvim --headless -c 'lua m = require("mason").setup()' -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt goimports lua-language-server ansible-language-server bzl bash-language-server efm' -c 'qall'
+        nvim --headless -c 'lua m = require("mason").setup()' \
+                        -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
+                        -c 'MasonInstall goimports lua-language-server' \
+                        -c 'MasonInstall ansible-language-server bzl' \
+                        -c 'MasonInstall bash-language-server efm' \
+                        -c 'qall'
       args:
         executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
@@ -86,6 +92,7 @@
       get_url:
         url: https://golang.org/dl/{{ golang_tar }}.gz
         dest: "{{ inventory_dir }}/tarballs/{{ golang_tar }}"
+        mode: "0644"
 
     - name: Extract golang
       unarchive:

@@ -1,19 +1,31 @@
 ---
-# Install gopls to use lsp in nvim
-# TODO: Install gopls as $ go install golang.org/x/tools/gopls@latest
-#       Update: Setup with mason instead
-- import_playbook: playbooks/common.yml
-- import_playbook: playbooks/bashrc.yml
-- import_playbook: playbooks/gnome-customization.yml
-- import_playbook: playbooks/fonts.yml
-- import_playbook: playbooks/kitty.yml
-- import_playbook: playbooks/nvim.yml
-- import_playbook: playbooks/bash-it.yml
-- import_playbook: playbooks/ranger.yml
-- import_playbook: playbooks/fzf.yml
-- import_playbook: playbooks/global-gitignore.yml
-- import_playbook: playbooks/bazel.yml
-- import_playbook: playbooks/bat.yml
-- import_playbook: playbooks/glow.yml
-- import_playbook: playbooks/mdcat.yml
-- import_playbook: playbooks/extras.yml
+- name: Common tasks
+  ansible.builtin.import_playbook: playbooks/common.yml
+- name: Setup bashrc
+  ansible.builtin.import_playbook: playbooks/bashrc.yml
+- name: Apply gnome customizations
+  ansible.builtin.import_playbook: playbooks/gnome-customization.yml
+- name: Install fonts
+  ansible.builtin.import_playbook: playbooks/fonts.yml
+- name: Setup kitty
+  ansible.builtin.import_playbook: playbooks/kitty.yml
+- name: Setup neovim
+  ansible.builtin.import_playbook: playbooks/nvim.yml
+- name: Setup bash-it
+  ansible.builtin.import_playbook: playbooks/bash-it.yml
+- name: Setup ranger
+  ansible.builtin.import_playbook: playbooks/ranger.yml
+- name: Setup fzf
+  ansible.builtin.import_playbook: playbooks/fzf.yml
+- name: Setup global gitignore
+  ansible.builtin.import_playbook: playbooks/global-gitignore.yml
+- name: Setup bazel stuff
+  ansible.builtin.import_playbook: playbooks/bazel.yml
+- name: Install bat
+  ansible.builtin.import_playbook: playbooks/bat.yml
+- name: Install glow
+  ansible.builtin.import_playbook: playbooks/glow.yml
+- name: Install mdcat
+  ansible.builtin.import_playbook: playbooks/mdcat.yml
+- name: Apply extras
+  ansible.builtin.import_playbook: playbooks/extras.yml

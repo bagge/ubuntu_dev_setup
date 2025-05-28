@@ -7,6 +7,7 @@
       get_url:
         url: "https://github.com/swsnr/mdcat/releases/download/mdcat-2.6.1/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar"
+        mode: "0644"
 
     - name: Extract mdcat
       unarchive:
@@ -24,16 +25,17 @@
       file:
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1"
         state: directory
-        mode: 0755
+        mode: "0755"
 
     - name: Copy manfile
       copy:
         src: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu/mdcat.1/mdcat.1"
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1/mdcat.1"
-        mode: 0644
+        mode: "0644"
       register: manfile_copy
 
     - name: Update mandb
       become: true
       command: mandb
       when: manfile_copy.changed
+      changed_when: false
