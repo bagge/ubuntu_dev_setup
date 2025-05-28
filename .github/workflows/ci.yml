@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y pipx
-          pipx install --user ansible-lint
+          pipx install ansible-lint
       - name: Run linter
         run: |
           ansible-lint setup.yml
