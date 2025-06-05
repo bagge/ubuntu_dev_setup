@@ -50,7 +50,7 @@
         nvim --headless -c 'lua m = require("mason").setup()' \
                         -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
                         -c 'MasonInstall goimports lua-language-server' \
-                        -c 'MasonInstall ansible-language-server bzl' \
+                        -c 'MasonInstall ansible-language-server starpls' \
                         -c 'MasonInstall bash-language-server efm' \
                         -c 'qall'
       args:
