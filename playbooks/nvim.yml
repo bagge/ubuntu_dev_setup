@@ -52,7 +52,7 @@
                         -c 'MasonInstall goimports lua-language-server' \
                         -c 'MasonInstall ansible-language-server starpls' \
                         -c 'MasonInstall bash-language-server efm' \
-                        -c 'MasonInstall yaml-language-server' \
+                        -c 'MasonInstall yaml-language-server pyright' \
                         -c 'qall'
       args:
         executable: /bin/bash
