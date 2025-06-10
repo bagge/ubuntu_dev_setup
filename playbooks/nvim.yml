@@ -45,20 +45,6 @@
         - ripgrep
         - curl
 
-    - name: Do tool installation in nvim
-      shell: >
-        nvim --headless -c 'lua m = require("mason").setup()' \
-                        -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
-                        -c 'MasonInstall goimports lua-language-server' \
-                        -c 'MasonInstall ansible-language-server starpls' \
-                        -c 'MasonInstall bash-language-server efm' \
-                        -c 'MasonInstall yaml-language-server pyright' \
-                        -c 'qall'
-      args:
-        executable: /bin/bash
-        chdir: "{{ ansible_env.HOME }}"
-        creates: "{{ ansible_env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
-
     - name: Set nvim as default editor for git
       community.general.git_config:
         name: core.editor
@@ -108,3 +94,17 @@
         state: link
       with_items:
         - "007-golang.bashrc"
+
+    - name: Do tool installation in nvim
+      shell: >
+        nvim --headless -c 'lua m = require("mason").setup()' \
+                        -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
+                        -c 'MasonInstall goimports lua-language-server' \
+                        -c 'MasonInstall ansible-language-server starpls' \
+                        -c 'MasonInstall bash-language-server efm' \
+                        -c 'MasonInstall yaml-language-server pyright' \
+                        -c 'qall'
+      args:
+        executable: /bin/bash
+        chdir: "{{ ansible_env.HOME }}"
+        creates: "{{ ansible_env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
