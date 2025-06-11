@@ -103,6 +103,7 @@
                         -c 'MasonInstall ansible-language-server starpls' \
                         -c 'MasonInstall bash-language-server efm' \
                         -c 'MasonInstall yaml-language-server pyright' \
+                        -c 'MasonInstall isort black prettierd' \
                         -c 'qall'
       args:
         executable: /bin/bash
