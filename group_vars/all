@@ -1,11 +1,11 @@
 ---
-kitty_version: 0.45.0
 bash_it_version: 3.2.0
-fzf_version: 0.67.0
-bazelisk_version: 1.27.0
 bazel_buildtools_version: 8.2.1
+bazelisk_version: 1.27.0
+fzf_version: 0.67.0
 glow_version: 2.1.1
+golang_version: 1.25.5
+kitty_version: 0.45.0
 mdcat_version: 2.7.1
 nvim_version: 0.11.5
-golang_version: 1.25.5
 toprepo_version: 0.6.0
