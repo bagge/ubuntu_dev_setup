@@ -5,7 +5,7 @@
   tasks:
     - name: Fetch glow
       get_url:
-        url: "https://github.com/charmbracelet/glow/releases/download/v2.0.0/glow_{{ glow_version }}_amd64.deb"
+        url: "https://github.com/charmbracelet/glow/releases/download/v{{ glow_version }}/glow_{{ glow_version }}_amd64.deb"
         dest: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_amd64.deb"
         mode: "0644"
 
