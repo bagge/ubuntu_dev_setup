@@ -31,10 +31,11 @@
         - docker.io
       when: ansible_env.IS_GITHUB_CI is not defined
 
-    - name: Install git-toprepo
-      pip:
-        name: git-toprepo
-        extra_args: --user
+    - name: Download toprepo
+      get_url:
+        url: "https://github.com/meroton/git-toprepo/releases/download/{{ toprepo_version }}/git-toprepo-{{ toprepo_version }}-linux-x86_64"
+        dest: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
+        mode: "0755"
 
     - name: Download google-chrome-stable
       get_url:
