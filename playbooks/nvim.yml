@@ -4,6 +4,7 @@
   tags: nvim
   vars:
     golang_tar: "go{{ golang_version }}.linux-amd64.tar"
+    install_nvim_tools: true
   tasks:
     - name: Download nvim
       get_url:
@@ -16,6 +17,7 @@
         src: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64/bin/nvim"
 
     - name: Link nvim installation
       file:
@@ -86,6 +88,7 @@
         src: "{{ inventory_dir }}/tarballs/{{ golang_tar }}"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/go/bin/go"
 
     - name: Enable golang bashrc snippet
       file:
@@ -97,7 +100,7 @@
 
     - name: Do tool installation in nvim
       shell: >
-        nvim --headless -c 'lua m = require("mason").setup()' \
+        {{ ansible_env.HOME }}/.local/bin/nvim --headless -c 'lua m = require("mason").setup()' \
                         -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
                         -c 'MasonInstall goimports lua-language-server' \
                         -c 'MasonInstall ansible-language-server starpls' \
@@ -109,3 +112,4 @@
         executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
         creates: "{{ ansible_env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
+      when: install_nvim_tools | bool

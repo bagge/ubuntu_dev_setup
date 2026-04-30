@@ -20,6 +20,7 @@
         src: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
         dest: "{{ inventory_dir }}/tarballs/kitty.app"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/kitty.app/bin/kitty"
 
     - name: Fix kitty path in desktop files
       replace:
@@ -54,6 +55,12 @@
         - kitty.desktop
         - kitty-open.desktop
 
+    - name: Create config directory
+      file:
+        path: "{{ ansible_env.HOME }}/.config"
+        state: directory
+        mode: "0755"
+
     - name: Make xdg-terminal-exec (and hence desktop environments that support it use kitty)
       copy:
         content: |
@@ -64,6 +71,7 @@
     - name: Configure gnome to use kitty as default terminal
       command: gsettings set org.gnome.desktop.default-applications.terminal exec "{{ ansible_env.HOME }}/.local/bin/kitty"
       changed_when: false
+      when: run_gnome_customization | default(true) | bool
 
     - name: Create kitty config directory
       file:

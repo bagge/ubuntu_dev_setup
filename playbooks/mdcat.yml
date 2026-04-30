@@ -14,6 +14,7 @@
         src: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu/mdcat"
 
     - name: Link mdcat
       file:

@@ -6,6 +6,8 @@
     chrome_deb: "google-chrome-stable_current_amd64.deb"
     horizon_url: "https://download3.omnissa.com/software/CART25FQ2_LIN64_DEBPKG_2406"
     horizon_deb: "VMware-Horizon-Client-2406-8.13.0-9995429239.x64.deb"
+    install_docker: "{{ ansible_env.IS_GITHUB_CI is not defined }}"
+    install_proprietary_extras: true
   tasks:
     - name: Install other apt packages
       become: true
@@ -29,7 +31,7 @@
         state: present
       with_items:
         - docker.io
-      when: ansible_env.IS_GITHUB_CI is not defined
+      when: install_docker | bool
 
     - name: Download toprepo
       get_url:
@@ -42,21 +44,25 @@
         url: "https://dl.google.com/linux/direct/{{ chrome_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
         mode: "0644"
+      when: install_proprietary_extras | bool
 
     - name: Install google-chrome-stable
       become: true
       apt:
         deb: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
         state: present
+      when: install_proprietary_extras | bool
 
     - name: Download vmware-horizon-client
       get_url:
         url: "{{ horizon_url }}/{{ horizon_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ horizon_deb }}"
         mode: "0644"
+      when: install_proprietary_extras | bool
 
     - name: Install vmware-horizon-client
       become: true
       apt:
         deb: "{{ inventory_dir }}/tarballs/{{ horizon_deb }}"
         state: present
+      when: install_proprietary_extras | bool

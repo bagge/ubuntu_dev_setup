@@ -17,30 +17,33 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pipx
+          sudo apt-get install -y ansible pipx
           pipx install ansible-lint
+          ansible-galaxy collection install -r requirements.yml
       - name: Run linter
         run: |
           ansible-lint setup.yml
 
-  execute-playbook:
-    env:
-      IS_GITHUB_CI: 1
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-
+  shell-static:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ansible dconf-cli
-      - name: Run playbook
+          sudo apt-get install -y shellcheck
+      - name: Run shell checks
         run: |
-          ansible-playbook setup.yml
-      - name: Run playbook second time and verify no changed tasks
+          bash tests/shell/check.sh
+
+  container-integration:
+    strategy:
+      matrix:
+        ubuntu-version: ["22.04", "24.04"]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run containerized integration test
         run: |
-          ansible-playbook setup.yml 2>&1 | tee /tmp/ansible-playbook.log
-          tail -2 /tmp/ansible-playbook.log | grep -q 'changed=3.*failed=0'
+          bash tests/container/run.sh "${{ matrix.ubuntu-version }}"

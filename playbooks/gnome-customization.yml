@@ -2,12 +2,15 @@
 - name: Apply gnome customizations
   hosts: all
   tags: gnome-customization
+  vars:
+    run_gnome_customization: true
   tasks:
     - name: Read enabled extensions
       community.general.dconf:
         key: /org/gnome/shell/enabled-extensions
         state: read
       register: enabled_extensions
+      when: run_gnome_customization | bool
 
     # Next task requires killall -SIGQUIT gnome-shell afterwards in order for the
     # extension to be found. Right now the next task will just fail but maybe some
@@ -17,6 +20,7 @@
       package:
         name: gnome-shell-extensions
         state: present
+      when: run_gnome_customization | bool
 
     - name: Enable workspace indicator
       command:
@@ -24,38 +28,45 @@
       register: enable_workspace_indicator
       changed_when: "enabled_extensions.value != None and 'workspace-indicator' not in enabled_extensions.value"
       failed_when: "enabled_extensions.value != None and enable_workspace_indicator.rc != 0"
+      when: run_gnome_customization | bool
 
     - name: Configure switch to workspace left
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/switch-to-workspace-left
         value: "['<Primary><Alt>h']"
         state: present
+      when: run_gnome_customization | bool
 
     - name: Configure switch to workspace right
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/switch-to-workspace-right
         value: "['<Primary><Alt>l']"
         state: present
+      when: run_gnome_customization | bool
 
     - name: Configure move to workspace left
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/move-to-workspace-left
         value: "['<Primary><Shift><Alt>h']"
         state: present
+      when: run_gnome_customization | bool
 
     - name: Configure move to workspace right
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/move-to-workspace-right
         value: "['<Primary><Shift><Alt>l']"
         state: present
+      when: run_gnome_customization | bool
 
     - name: Configure caps-lock to be escape
       community.general.dconf:
         key: /org/gnome/desktop/input-sources/xkb-options
         value: "['caps:escape']"
         state: present
+      when: run_gnome_customization | bool
 
     - name: Set dark mode
       command: gsettings set org.gnome.desktop.interface color-scheme prefer-dark
       changed_when: false
       tags: gnome-appearance
+      when: run_gnome_customization | bool

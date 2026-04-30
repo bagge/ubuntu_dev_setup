@@ -17,6 +17,30 @@ The playbook is executed with the following command:
 $ ansible-playbook setup.yml
 ```
 
+## Testing
+
+The repository includes a containerized test harness so playbook changes can be
+tested without changing the local workstation setup.
+
+Run the default Ubuntu 24.04 container test:
+
+```bash
+$ bash tests/container/run.sh
+```
+
+Run a specific Ubuntu version:
+
+```bash
+$ bash tests/container/run.sh 22.04
+```
+
+The container test copies the repository into a disposable container, runs the
+playbook, verifies expected state with Ansible assertions, runs the playbook a
+second time, and fails unless the second run reports `changed=0` and `failed=0`.
+
+Desktop-specific GNOME behavior should be tested in a disposable Ubuntu Desktop
+VM using `tests/manual/gnome-vm.md`.
+
 Other things to remember to transfer when changing computers:
 - Stored passwords in chrome
 
