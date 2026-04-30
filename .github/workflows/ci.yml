@@ -47,3 +47,15 @@ jobs:
       - name: Run containerized integration test
         run: |
           bash tests/container/run.sh "${{ matrix.ubuntu-version }}"
+
+  macos-integration:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          brew install ansible shellcheck
+      - name: Run macOS integration test
+        run: |
+          bash tests/macos/run.sh

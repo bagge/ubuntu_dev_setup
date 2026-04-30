@@ -8,8 +8,10 @@
     horizon_deb: "VMware-Horizon-Client-2406-8.13.0-9995429239.x64.deb"
     install_docker: "{{ ansible_env.IS_GITHUB_CI is not defined }}"
     install_proprietary_extras: true
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Install other apt packages
+    - name: Install other apt packages on Ubuntu
       become: true
       apt:
         name: "{{ item }}"
@@ -23,46 +25,78 @@
         - python3-pip
         - python3-venv
         - virt-manager
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Install apt packages not installable in Github Actions
+    - name: Install apt packages not installable in Github Actions on Ubuntu
       become: true
       apt:
         name: "{{ item }}"
         state: present
       with_items:
         - docker.io
-      when: install_docker | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_docker | bool
 
-    - name: Download toprepo
+    - name: Download toprepo on Ubuntu
       get_url:
         url: "https://github.com/meroton/git-toprepo/releases/download/{{ toprepo_version }}/git-toprepo-{{ toprepo_version }}-linux-x86_64"
         dest: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
         mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Download google-chrome-stable
+    - name: Install toprepo on macOS
+      command: >
+        cargo install --git https://github.com/meroton/git-toprepo.git
+        --tag {{ toprepo_version }} --root {{ ansible_env.HOME }}/.local
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
+      when: dev_setup_platform == 'macos'
+
+    - name: Download google-chrome-stable on Ubuntu
       get_url:
         url: "https://dl.google.com/linux/direct/{{ chrome_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
         mode: "0644"
-      when: install_proprietary_extras | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_proprietary_extras | bool
 
-    - name: Install google-chrome-stable
+    - name: Install google-chrome-stable on Ubuntu
       become: true
       apt:
         deb: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
         state: present
-      when: install_proprietary_extras | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_proprietary_extras | bool
 
-    - name: Download vmware-horizon-client
+    - name: Install proprietary casks on macOS
+      community.general.homebrew_cask:
+        name: "{{ item }}"
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+      loop:
+        - google-chrome
+        - omnissa-horizon-client
+      when:
+        - dev_setup_platform == 'macos'
+        - install_proprietary_extras | bool
+
+    - name: Download vmware-horizon-client on Ubuntu
       get_url:
         url: "{{ horizon_url }}/{{ horizon_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ horizon_deb }}"
         mode: "0644"
-      when: install_proprietary_extras | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_proprietary_extras | bool
 
-    - name: Install vmware-horizon-client
+    - name: Install vmware-horizon-client on Ubuntu
       become: true
       apt:
         deb: "{{ inventory_dir }}/tarballs/{{ horizon_deb }}"
         state: present
-      when: install_proprietary_extras | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_proprietary_extras | bool

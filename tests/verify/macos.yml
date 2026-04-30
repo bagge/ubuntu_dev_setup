@@ -1,0 +1,167 @@
+---
+- name: Verify macOS workstation setup
+  hosts: all
+  gather_facts: true
+  vars:
+    expected_default_snippets:
+      - 000-setup-location.bashrc
+      - 001-homebrew.bashrc
+      - 004-bash-history.bashrc
+      - 999-optional-auth.bashrc
+    expected_tool_snippets:
+      - 002-bash_it.bashrc
+      - 003-bazel-helpers.bashrc
+      - 005-fzf.bashrc
+      - 006-nvm.bashrc
+      - 007-golang.bashrc
+    expected_local_bins:
+      - bazel
+      - bat
+      - buildifier
+      - buildozer
+      - cat
+      - git-toprepo
+      - kitten
+      - kitty
+      - mdcat
+      - nvim
+      - repo
+      - unused_deps
+    expected_formulae:
+      - ansible-lint
+      - bash
+      - bat
+      - bmon
+      - curl
+      - fzf
+      - git
+      - glow
+      - graphviz
+      - jq
+      - ranger
+      - ripgrep
+      - rust
+      - shellcheck
+      - shfmt
+      - stylua
+    expected_casks:
+      - font-hack-nerd-font
+      - kitty
+  tasks:
+    - name: Assert Apple Silicon macOS
+      ansible.builtin.assert:
+        that:
+          - ansible_system == "Darwin"
+          - ansible_architecture == "arm64"
+
+    - name: Check Homebrew
+      ansible.builtin.stat:
+        path: "{{ homebrew_prefix }}/bin/brew"
+      register: homebrew_binary
+
+    - name: Assert Homebrew exists
+      ansible.builtin.assert:
+        that:
+          - homebrew_binary.stat.exists
+          - homebrew_binary.stat.executable
+
+    - name: Check managed bashrc symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.bashrc"
+      register: bashrc_link
+
+    - name: Check managed bash_profile symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.bash_profile"
+      register: bash_profile_link
+
+    - name: Check managed bashrc.d symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.bashrc.d"
+      register: bashrc_d_link
+
+    - name: Assert bash links point into the workspace
+      ansible.builtin.assert:
+        that:
+          - bashrc_link.stat.islnk
+          - bashrc_link.stat.lnk_source == inventory_dir + "/bashrc"
+          - bash_profile_link.stat.islnk
+          - bash_profile_link.stat.lnk_source == inventory_dir + "/bash_profile"
+          - bashrc_d_link.stat.islnk
+          - bashrc_d_link.stat.lnk_source == inventory_dir + "/bashrc.d"
+
+    - name: Check enabled bash snippets
+      ansible.builtin.stat:
+        path: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
+      loop: "{{ expected_default_snippets + expected_tool_snippets }}"
+      register: enabled_snippets
+
+    - name: Assert enabled bash snippets are symlinks
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.islnk
+      loop: "{{ enabled_snippets.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Check expected local binaries
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+      loop: "{{ expected_local_bins }}"
+      register: local_bins
+
+    - name: Assert expected local binaries exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.executable or item.stat.islnk
+      loop: "{{ local_bins.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Assert expected Homebrew formulae are installed
+      ansible.builtin.command: "{{ homebrew_prefix }}/bin/brew list --formula {{ item }}"
+      changed_when: false
+      loop: "{{ expected_formulae }}"
+
+    - name: Assert expected Homebrew casks are installed
+      ansible.builtin.command: "{{ homebrew_prefix }}/bin/brew list --cask {{ item }}"
+      changed_when: false
+      loop: "{{ expected_casks }}"
+
+    - name: Read git editor config # noqa command-instead-of-module
+      ansible.builtin.command: git config --global core.editor
+      changed_when: false
+      register: git_editor
+
+    - name: Read git excludesfile config # noqa command-instead-of-module
+      ansible.builtin.command: git config --global core.excludesfile
+      changed_when: false
+      register: git_excludesfile
+
+    - name: Assert git global config
+      ansible.builtin.assert:
+        that:
+          - git_editor.stdout == "nvim"
+          - git_excludesfile.stdout == ansible_env.HOME + "/.gitignore"
+
+    - name: Read global gitignore
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.gitignore"
+      register: global_gitignore
+
+    - name: Assert global gitignore contains go.sum
+      ansible.builtin.assert:
+        that:
+          - "'go.sum' in (global_gitignore.content | b64decode).splitlines()"
+
+    - name: Check proprietary casks are absent in test mode
+      ansible.builtin.command: "{{ homebrew_prefix }}/bin/brew list --cask {{ item }}"
+      changed_when: false
+      failed_when: proprietary_cask.rc == 0
+      register: proprietary_cask
+      loop:
+        - google-chrome
+        - omnissa-horizon-client
+      when: test_mode | default(false) | bool

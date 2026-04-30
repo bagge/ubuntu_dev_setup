@@ -2,23 +2,32 @@
 - name: Setup mdcat
   hosts: all
   tags: mdcat
+  vars:
+    mdcat_target: "{{ 'x86_64-unknown-linux-gnu' if dev_setup_platform == 'ubuntu' else 'aarch64-apple-darwin' }}"
+    mdcat_archive: "mdcat-{{ mdcat_version }}-{{ mdcat_target }}"
   tasks:
+    - name: Create local bin directory
+      file:
+        dest: "{{ ansible_env.HOME }}/.local/bin"
+        state: directory
+        mode: "0755"
+
     - name: Download mdcat
       get_url:
-        url: "https://github.com/swsnr/mdcat/releases/download/mdcat-{{ mdcat_version }}/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar.gz"
-        dest: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar"
+        url: "https://github.com/swsnr/mdcat/releases/download/mdcat-{{ mdcat_version }}/{{ mdcat_archive }}.tar.gz"
+        dest: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}.tar"
         mode: "0644"
 
     - name: Extract mdcat
       unarchive:
-        src: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu.tar"
+        src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
-        creates: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu/mdcat"
+        creates: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat"
 
     - name: Link mdcat
       file:
-        src: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu/mdcat"
+        src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat"
         dest: "{{ ansible_env.HOME }}/.local/bin/mdcat"
         state: link
 
@@ -30,7 +39,7 @@
 
     - name: Copy manfile
       copy:
-        src: "{{ inventory_dir }}/tarballs/mdcat-{{ mdcat_version }}-x86_64-unknown-linux-gnu/mdcat.1/mdcat.1"
+        src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat.1/mdcat.1"
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1/mdcat.1"
         mode: "0644"
       register: manfile_copy
@@ -38,5 +47,7 @@
     - name: Update mandb
       become: true
       command: mandb
-      when: manfile_copy.changed
       changed_when: false
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - manfile_copy.changed

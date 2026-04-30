@@ -5,7 +5,11 @@ bazelisk_version: 1.27.0
 fzf_version: 0.67.0
 glow_version: 2.1.1
 golang_version: 1.25.5
+homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+homebrew_prefix: /opt/homebrew
+homebrew_update: false
 kitty_version: 0.45.0
+macos_set_login_shell: false
 mdcat_version: 2.7.1
 nvim_version: 0.11.5
 toprepo_version: 0.6.0

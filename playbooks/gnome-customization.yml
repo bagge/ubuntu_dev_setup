@@ -3,14 +3,16 @@
   hosts: all
   tags: gnome-customization
   vars:
-    run_gnome_customization: true
+    run_desktop_customization: "{{ run_gnome_customization | default(true) }}"
   tasks:
     - name: Read enabled extensions
       community.general.dconf:
         key: /org/gnome/shell/enabled-extensions
         state: read
       register: enabled_extensions
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     # Next task requires killall -SIGQUIT gnome-shell afterwards in order for the
     # extension to be found. Right now the next task will just fail but maybe some
@@ -20,7 +22,9 @@
       package:
         name: gnome-shell-extensions
         state: present
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Enable workspace indicator
       command:
@@ -28,45 +32,118 @@
       register: enable_workspace_indicator
       changed_when: "enabled_extensions.value != None and 'workspace-indicator' not in enabled_extensions.value"
       failed_when: "enabled_extensions.value != None and enable_workspace_indicator.rc != 0"
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Configure switch to workspace left
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/switch-to-workspace-left
         value: "['<Primary><Alt>h']"
         state: present
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Configure switch to workspace right
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/switch-to-workspace-right
         value: "['<Primary><Alt>l']"
         state: present
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Configure move to workspace left
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/move-to-workspace-left
         value: "['<Primary><Shift><Alt>h']"
         state: present
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Configure move to workspace right
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/move-to-workspace-right
         value: "['<Primary><Shift><Alt>l']"
         state: present
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Configure caps-lock to be escape
       community.general.dconf:
         key: /org/gnome/desktop/input-sources/xkb-options
         value: "['caps:escape']"
         state: present
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
 
     - name: Set dark mode
       command: gsettings set org.gnome.desktop.interface color-scheme prefer-dark
       changed_when: false
       tags: gnome-appearance
-      when: run_gnome_customization | bool
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
+
+    - name: Set dark mode on macOS
+      community.general.osx_defaults:
+        domain: NSGlobalDomain
+        key: AppleInterfaceStyle
+        type: string
+        value: Dark
+        state: present
+      when:
+        - dev_setup_platform == 'macos'
+        - run_desktop_customization | bool
+
+    - name: Create LaunchAgents directory on macOS
+      file:
+        path: "{{ ansible_env.HOME }}/Library/LaunchAgents"
+        state: directory
+        mode: "0755"
+      when:
+        - dev_setup_platform == 'macos'
+        - run_desktop_customization | bool
+
+    - name: Install Caps Lock to Escape LaunchAgent on macOS
+      copy:
+        dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
+        mode: "0644"
+        content: |
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>Label</key>
+            <string>dev.setup.capslock-escape</string>
+            <key>ProgramArguments</key>
+            <array>
+              <string>/usr/bin/hidutil</string>
+              <string>property</string>
+              <string>--set</string>
+              <string>{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x700000029}]}</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+          </dict>
+          </plist>
+      when:
+        - dev_setup_platform == 'macos'
+        - run_desktop_customization | bool
+
+    - name: Load Caps Lock to Escape LaunchAgent on macOS
+      command: launchctl bootstrap "gui/{{ ansible_user_uid }}" "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
+      register: caps_lock_launchctl
+      changed_when: caps_lock_launchctl.rc == 0
+      failed_when:
+        - caps_lock_launchctl.rc != 0
+        - "'Bootstrap failed: 5' not in caps_lock_launchctl.stderr"
+        - "'Service is disabled' not in caps_lock_launchctl.stderr"
+      when:
+        - dev_setup_platform == 'macos'
+        - run_desktop_customization | bool
