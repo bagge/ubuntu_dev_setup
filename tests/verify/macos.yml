@@ -23,7 +23,6 @@
       - git-toprepo
       - kitten
       - kitty
-      - mdcat
       - nvim
       - repo
       - unused_deps

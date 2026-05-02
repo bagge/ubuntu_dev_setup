@@ -15,6 +15,7 @@ if [ "$(uname -m)" != "arm64" ]; then
 fi
 
 export ANSIBLE_CONFIG="${repo_root}/ansible.cfg"
+export ANSIBLE_BECOME_ASK_PASS=False
 export ANSIBLE_FORCE_COLOR=0
 export TEST_EXTRA_VARS="test_mode=true homebrew_update=false install_proprietary_extras=false install_nvim_tools=false macos_set_login_shell=false run_desktop_customization=false"
 

@@ -11,12 +11,14 @@
         dest: "{{ ansible_env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Download mdcat
       get_url:
         url: "https://github.com/swsnr/mdcat/releases/download/mdcat-{{ mdcat_version }}/{{ mdcat_archive }}.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}.tar"
         mode: "0644"
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Extract mdcat
       unarchive:
@@ -24,18 +26,21 @@
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
         creates: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat"
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Link mdcat
       file:
         src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat"
         dest: "{{ ansible_env.HOME }}/.local/bin/mdcat"
         state: link
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Create local man directory
       file:
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1"
         state: directory
         mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Copy manfile
       copy:
@@ -43,6 +48,7 @@
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1/mdcat.1"
         mode: "0644"
       register: manfile_copy
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Update mandb
       become: true
