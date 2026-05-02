@@ -51,6 +51,20 @@ class SyncVersionsTest(unittest.TestCase):
                 "node_major_version: 22\n",
             )
 
+    def test_write_vars_appends_new_checksum_variables(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "all"
+            path.write_text("---\nnvim_version: 0.11.5\n", encoding="utf-8")
+
+            sync_versions.write_vars({"nvim_linux_checksum": "abc123"}, path)
+
+            self.assertEqual(
+                path.read_text(encoding="utf-8"),
+                "---\n"
+                "nvim_version: 0.11.5\n"
+                "nvim_linux_checksum: abc123\n",
+            )
+
     def test_github_release_strips_prefix_and_verifies_assets(self):
         release = {
             "tag_name": "v1.2.3",
@@ -95,6 +109,63 @@ class SyncVersionsTest(unittest.TestCase):
             ):
                 sync_versions.github_release(source)
 
+    def test_github_asset_checksums_uses_release_digest(self):
+        release = {
+            "tag_name": "v1.2.3",
+            "assets": [
+                {
+                    "name": "tool-1.2.3-linux-amd64.tar.gz",
+                    "digest": "sha256:abc123",
+                },
+            ],
+        }
+        source = sync_versions.Source(
+            "tool",
+            "tool_version",
+            "github",
+            "owner/repo",
+            "v",
+            checksum_assets=(
+                sync_versions.ChecksumAsset(
+                    "tool-{version}-linux-amd64.tar.gz",
+                    "tool_linux_checksum",
+                ),
+            ),
+        )
+
+        self.assertEqual(
+            sync_versions.github_asset_checksums(source, "1.2.3", {}, release),
+            {"tool_linux_checksum": "abc123"},
+        )
+
+    def test_direct_checksums_hashes_url_bytes(self):
+        source = sync_versions.Source(
+            "script",
+            "script_url",
+            "static_url",
+            checksum_assets=(
+                sync_versions.ChecksumAsset(
+                    "{script_url}",
+                    "script_checksum",
+                ),
+            ),
+        )
+
+        with mock.patch.object(
+            sync_versions,
+            "fetch_sha256",
+            return_value="abc123",
+        ) as fetch_sha256:
+            self.assertEqual(
+                sync_versions.direct_checksums(
+                    source,
+                    "ignored",
+                    {"script_url": "https://example.invalid/script.sh"},
+                ),
+                {"script_checksum": "abc123"},
+            )
+            fetch_sha256.assert_called_once_with("https://example.invalid/script.sh")
+
     def test_go_latest_uses_first_stable_release_with_required_files(self):
         response = [
             {
@@ -111,6 +182,44 @@ class SyncVersionsTest(unittest.TestCase):
                 sync_versions.go_latest(sync_versions.Source("Go", "golang_version", "go")),
                 ("1.25.5", "linux amd64 and darwin arm64 files verified"),
             )
+
+    def test_go_checksums_uses_release_file_hashes(self):
+        release = {
+            "version": "go1.25.5",
+            "files": [
+                {
+                    "filename": "go1.25.5.linux-amd64.tar.gz",
+                    "sha256": "linux123",
+                },
+                {
+                    "filename": "go1.25.5.darwin-arm64.tar.gz",
+                    "sha256": "macos123",
+                },
+            ],
+        }
+        source = sync_versions.Source(
+            "Go",
+            "golang_version",
+            "go",
+            checksum_assets=(
+                sync_versions.ChecksumAsset(
+                    "go{version}.linux-amd64.tar.gz",
+                    "golang_linux_checksum",
+                ),
+                sync_versions.ChecksumAsset(
+                    "go{version}.darwin-arm64.tar.gz",
+                    "golang_macos_checksum",
+                ),
+            ),
+        )
+
+        self.assertEqual(
+            sync_versions.go_checksums(source, "1.25.5", {}, release),
+            {
+                "golang_linux_checksum": "linux123",
+                "golang_macos_checksum": "macos123",
+            },
+        )
 
     def test_node_lts_major_uses_highest_lts_major(self):
         response = [

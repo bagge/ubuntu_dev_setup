@@ -3,7 +3,6 @@
   hosts: all
   tags: extras
   vars:
-    chrome_deb: "google-chrome-stable_current_amd64.deb"
     install_docker: "{{ ansible_env.IS_GITHUB_CI is not defined }}"
     install_proprietary_extras: true
   environment:
@@ -40,6 +39,7 @@
       get_url:
         url: "https://github.com/meroton/git-toprepo/releases/download/{{ toprepo_version }}/git-toprepo-{{ toprepo_version }}-linux-x86_64"
         dest: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
+        checksum: "sha256:{{ toprepo_linux_checksum }}"
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
@@ -55,6 +55,7 @@
       get_url:
         url: "https://dl.google.com/linux/direct/{{ chrome_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
+        checksum: "sha256:{{ chrome_deb_checksum }}"
         mode: "0644"
       when:
         - dev_setup_platform == 'ubuntu'
@@ -85,6 +86,7 @@
       get_url:
         url: "{{ horizon_url }}/{{ horizon_deb }}"
         dest: "{{ inventory_dir }}/tarballs/{{ horizon_deb }}"
+        checksum: "sha256:{{ horizon_deb_checksum }}"
         mode: "0644"
       when:
         - dev_setup_platform == 'ubuntu'

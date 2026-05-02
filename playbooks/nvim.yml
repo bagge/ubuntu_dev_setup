@@ -4,7 +4,9 @@
   tags: nvim
   vars:
     nvim_archive_name: "{{ 'nvim-linux-x86_64' if dev_setup_platform == 'ubuntu' else 'nvim-macos-arm64' }}"
+    nvim_checksum: "{{ nvim_linux_checksum if dev_setup_platform == 'ubuntu' else nvim_macos_checksum }}"
     golang_archive_name: "{{ 'go' + golang_version + ('.linux-amd64' if dev_setup_platform == 'ubuntu' else '.darwin-arm64') }}"
+    golang_checksum: "{{ golang_linux_checksum if dev_setup_platform == 'ubuntu' else golang_macos_checksum }}"
     install_nvim_tools: true
     macos_nvim_formulae:
       - ansible-lint
@@ -17,6 +19,7 @@
       get_url:
         url: "https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/{{ nvim_archive_name }}.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}.tar"
+        checksum: "sha256:{{ nvim_checksum }}"
         mode: "0644"
 
     - name: Extract nvim
@@ -69,12 +72,20 @@
         scope: global
         value: nvim
 
-    - name: Install nvm # noqa command-instead-of-module risky-shell-pipe
+    - name: Download nvm installer
       become: false
-      shell: >
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh | PROFILE=/dev/null bash
+      get_url:
+        url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh"
+        dest: "{{ inventory_dir }}/tarballs/nvm-install-{{ nvm_version }}.sh"
+        checksum: "sha256:{{ nvm_install_checksum }}"
+        mode: "0755"
+
+    - name: Run nvm installer
+      become: false
+      command: /bin/bash "{{ inventory_dir }}/tarballs/nvm-install-{{ nvm_version }}.sh"
+      environment:
+        PROFILE: /dev/null
       args:
-        executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
         creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
 
@@ -102,6 +113,7 @@
       get_url:
         url: "https://golang.org/dl/{{ golang_archive_name }}.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/{{ golang_archive_name }}.tar"
+        checksum: "sha256:{{ golang_checksum }}"
         mode: "0644"
 
     - name: Extract golang
