@@ -2,9 +2,6 @@
 - name: Check supported platform
   hosts: all
   tags: always
-  vars:
-    homebrew_prefix: /opt/homebrew
-    homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
   tasks:
     - name: Determine setup platform
       ansible.builtin.set_fact:
@@ -36,13 +33,30 @@
       register: homebrew_binary
       when: dev_setup_platform == 'macos'
 
-    - name: Bootstrap Homebrew on macOS # noqa command-instead-of-module risky-shell-pipe
-      ansible.builtin.shell: >
-        /bin/bash -c "$(curl -fsSL {{ homebrew_install_url }})"
+    - name: Create tarballs directory for Homebrew installer on macOS
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/tarballs"
+        state: directory
+        mode: "0755"
+      when:
+        - dev_setup_platform == 'macos'
+        - not homebrew_binary.stat.exists
+
+    - name: Download Homebrew installer on macOS
+      ansible.builtin.get_url:
+        url: "{{ homebrew_install_url }}"
+        dest: "{{ inventory_dir }}/tarballs/homebrew-install.sh"
+        checksum: "sha256:{{ homebrew_install_checksum }}"
+        mode: "0755"
+      when:
+        - dev_setup_platform == 'macos'
+        - not homebrew_binary.stat.exists
+
+    - name: Bootstrap Homebrew on macOS
+      ansible.builtin.command: /bin/bash "{{ inventory_dir }}/tarballs/homebrew-install.sh"
       environment:
         NONINTERACTIVE: "1"
       args:
-        executable: /bin/bash
         creates: "{{ homebrew_prefix }}/bin/brew"
       when:
         - dev_setup_platform == 'macos'

@@ -60,14 +60,14 @@ ephemeral Apple Silicon macOS runner.
 
 ## Updating pinned tool versions
 
-Pinned tool versions live in `group_vars/all`. To check whether newer upstream
-versions are available, run:
+Pinned tool versions and download checksums live in `group_vars/all`. To check
+whether newer upstream versions or checksum refreshes are available, run:
 
 ```bash
 $ python3 tools/sync_versions.py --check
 ```
 
-To update the automatic pins in `group_vars/all`, run:
+To update the automatic pins and their checksums in `group_vars/all`, run:
 
 ```bash
 $ python3 tools/sync_versions.py --write
@@ -75,10 +75,17 @@ $ python3 tools/sync_versions.py --write
 
 The updater uses GitHub, Go, and Node.js release metadata and verifies expected
 release assets before accepting a new version. If `GITHUB_TOKEN` is set it will
-be used for GitHub API requests. Omnissa Horizon Client is included in the report
-as a manual pin because the vendor download page does not provide a stable
-version API. Homebrew formulae and casks are not pinned here; Homebrew resolves
-those versions during installation.
+be used for GitHub API requests. For currently pinned versions, checksum-only
+refreshes can be done without changing versions:
+
+```bash
+$ python3 tools/sync_versions.py --write-current-checksums
+```
+
+Omnissa Horizon Client is included in the report as a manual pin because the
+vendor download page does not provide a stable version API, but the declared
+package URL is still pinned by checksum. Homebrew formulae and casks are not
+pinned here; Homebrew resolves those versions during installation.
 
 Other things to remember to transfer when changing computers:
 - Stored passwords in chrome

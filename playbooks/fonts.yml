@@ -23,6 +23,7 @@
       get_url:
         url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v{{ nerd_fonts_version }}/Hack.zip"
         dest: "{{ inventory_dir }}/tarballs/Hack.zip"
+        checksum: "sha256:{{ nerd_fonts_hack_checksum }}"
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 

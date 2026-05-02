@@ -17,6 +17,7 @@
       get_url:
         url: "https://github.com/swsnr/mdcat/releases/download/mdcat-{{ mdcat_version }}/{{ mdcat_archive }}.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}.tar"
+        checksum: "sha256:{{ mdcat_linux_checksum }}"
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 

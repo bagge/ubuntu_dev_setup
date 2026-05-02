@@ -17,6 +17,7 @@
       get_url:
         url: "https://github.com/charmbracelet/glow/releases/download/v{{ glow_version }}/glow_{{ glow_version }}_amd64.deb"
         dest: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_amd64.deb"
+        checksum: "sha256:{{ glow_ubuntu_checksum }}"
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 
