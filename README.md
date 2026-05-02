@@ -1,12 +1,12 @@
-Setup dev environment on Ubuntu
-===============================
+Setup dev environment on Ubuntu and macOS
+=========================================
 <p>
     <img src="https://img.shields.io/github/license/bagge/ubuntu_dev_setup" hspace="5" >
     <img src="https://github.com/bagge/ubuntu_dev_setup/actions/workflows/ci.yml/badge.svg?event=push" hspace="5" >
 </p>
 
-This project contains an ansible playbook to setup a clean Ubuntu installation
-with my preferred tools and configurations.
+This project contains an ansible playbook to setup a clean Ubuntu or Apple
+Silicon macOS installation with my preferred tools and configurations.
 
 In addition there is a script to create a tar file of files to transfer to
 a new machine when changing computers.
@@ -16,6 +16,47 @@ The playbook is executed with the following command:
 ```bash
 $ ansible-playbook setup.yml
 ```
+
+Supported platforms:
+- Ubuntu on amd64
+- macOS on Apple Silicon
+
+On macOS, Homebrew is installed automatically when it is missing. The default
+Homebrew prefix is `/opt/homebrew`.
+
+## Testing
+
+The repository includes a containerized test harness so playbook changes can be
+tested without changing the local workstation setup.
+
+Run the default Ubuntu 24.04 container test:
+
+```bash
+$ bash tests/container/run.sh
+```
+
+Run a specific Ubuntu version:
+
+```bash
+$ bash tests/container/run.sh 22.04
+```
+
+The container test copies the repository into a disposable container, runs the
+playbook, verifies expected state with Ansible assertions, runs the playbook a
+second time, and fails unless the second run reports `changed=0` and `failed=0`.
+
+Desktop-specific GNOME behavior should be tested in a disposable Ubuntu Desktop
+VM using `tests/manual/gnome-vm.md`.
+
+Run the macOS Apple Silicon integration test directly on a macOS host:
+
+```bash
+$ bash tests/macos/run.sh
+```
+
+The macOS test uses the local host rather than Docker because macOS cannot be
+run in the Ubuntu container harness. GitHub Actions runs the same test on an
+ephemeral Apple Silicon macOS runner.
 
 Other things to remember to transfer when changing computers:
 - Stored passwords in chrome
@@ -50,10 +91,13 @@ The main idea of this setup is to have a tiling environment without requiring
 tmux or a tiling window manager.
 This is achieved by using kitty as the terminal.
 Though in addition configuration is done to have consistent keybindings for
-movement between neovim windows and kitty windows. Also gnome keybindings are
-modified to use easier to reach (more vim like) keybindings to switch workspaces
-and to move windows between workspaces. See tasks/gnome-customization.yml for
-more details.
+movement between neovim windows and kitty windows. On Ubuntu, GNOME keybindings
+are modified to use easier to reach (more vim like) keybindings to switch
+workspaces and to move windows between workspaces. On macOS, safe desktop
+defaults such as dark mode and Caps Lock to Escape are configured, while
+workspace keybindings remain manual because macOS stores them in a brittle
+system preference structure. See `playbooks/gnome-customization.yml` for more
+details.
 
 ## Keybindings
 

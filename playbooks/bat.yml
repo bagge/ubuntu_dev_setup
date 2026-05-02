@@ -2,12 +2,25 @@
 - name: Setup bat
   hosts: all
   tags: bat
+  vars:
+    bat_binary: "{{ '/usr/bin/batcat' if dev_setup_platform == 'ubuntu' else homebrew_prefix + '/bin/bat' }}"
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Install bat
+    - name: Install bat on Ubuntu
       become: true
       apt:
         name: bat
         state: present
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Install bat on macOS
+      community.general.homebrew:
+        name: bat
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+        path: "{{ homebrew_prefix }}/bin"
+      when: dev_setup_platform == 'macos'
 
     - name: Create local bin directory
       file:
@@ -17,7 +30,7 @@
 
     - name: Symlink bat
       file:
-        src: /usr/bin/batcat
+        src: "{{ bat_binary }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
         state: link
       with_items:

@@ -1,0 +1,64 @@
+---
+- name: Check supported platform
+  hosts: all
+  tags: always
+  vars:
+    homebrew_prefix: /opt/homebrew
+    homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+  tasks:
+    - name: Determine setup platform
+      ansible.builtin.set_fact:
+        dev_setup_platform: >-
+          {%- if ansible_system == 'Darwin' -%}
+          macos{%- elif ansible_distribution == 'Ubuntu' -%}
+          ubuntu{%- else -%}
+          unsupported{%- endif -%}
+        dev_setup_arch: >-
+          {%- if ansible_architecture in ['x86_64', 'amd64'] -%}
+          amd64{%- elif ansible_architecture in ['arm64', 'aarch64'] -%}
+          arm64{%- else -%}
+          {{ ansible_architecture }}{%- endif -%}
+
+    - name: Assert supported platform
+      ansible.builtin.assert:
+        that:
+          - dev_setup_platform in ['ubuntu', 'macos']
+          - (dev_setup_platform == 'ubuntu' and dev_setup_arch == 'amd64') or
+            (dev_setup_platform == 'macos' and dev_setup_arch == 'arm64')
+        fail_msg: >-
+          Unsupported platform: {{ ansible_system }} {{ ansible_distribution | default('') }}
+          {{ ansible_architecture }}. Supported platforms are Ubuntu amd64 and
+          macOS Apple Silicon.
+
+    - name: Check for Homebrew on macOS
+      ansible.builtin.stat:
+        path: "{{ homebrew_prefix }}/bin/brew"
+      register: homebrew_binary
+      when: dev_setup_platform == 'macos'
+
+    - name: Bootstrap Homebrew on macOS # noqa command-instead-of-module risky-shell-pipe
+      ansible.builtin.shell: >
+        /bin/bash -c "$(curl -fsSL {{ homebrew_install_url }})"
+      environment:
+        NONINTERACTIVE: "1"
+      args:
+        executable: /bin/bash
+        creates: "{{ homebrew_prefix }}/bin/brew"
+      when:
+        - dev_setup_platform == 'macos'
+        - not homebrew_binary.stat.exists
+
+    - name: Check Homebrew prefix on macOS
+      ansible.builtin.command: "{{ homebrew_prefix }}/bin/brew --prefix"
+      register: homebrew_prefix_check
+      changed_when: false
+      when: dev_setup_platform == 'macos'
+
+    - name: Assert Homebrew prefix on macOS
+      ansible.builtin.assert:
+        that:
+          - homebrew_prefix_check.stdout == homebrew_prefix
+        fail_msg: >-
+          Expected Homebrew at {{ homebrew_prefix }}, but brew reported
+          {{ homebrew_prefix_check.stdout }}.
+      when: dev_setup_platform == 'macos'

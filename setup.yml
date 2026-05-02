@@ -1,4 +1,6 @@
 ---
+- name: Check supported platform
+  ansible.builtin.import_playbook: playbooks/preflight.yml
 - name: Common tasks
   ansible.builtin.import_playbook: playbooks/common.yml
 - name: Setup bashrc

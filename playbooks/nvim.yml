@@ -3,23 +3,32 @@
   hosts: all
   tags: nvim
   vars:
-    golang_tar: "go{{ golang_version }}.linux-amd64.tar"
+    nvim_archive_name: "{{ 'nvim-linux-x86_64' if dev_setup_platform == 'ubuntu' else 'nvim-macos-arm64' }}"
+    golang_archive_name: "{{ 'go' + golang_version + ('.linux-amd64' if dev_setup_platform == 'ubuntu' else '.darwin-arm64') }}"
+    install_nvim_tools: true
+    macos_nvim_formulae:
+      - ansible-lint
+      - curl
+      - ripgrep
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
     - name: Download nvim
       get_url:
-        url: https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/nvim-linux-x86_64.tar.gz
-        dest: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
+        url: "https://github.com/neovim/neovim/releases/download/v{{ nvim_version }}/{{ nvim_archive_name }}.tar.gz"
+        dest: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}.tar"
         mode: "0644"
 
     - name: Extract nvim
       unarchive:
-        src: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64.tar"
+        src: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}/bin/nvim"
 
     - name: Link nvim installation
       file:
-        src: "{{ inventory_dir }}/tarballs/nvim-linux-x86_64/bin/nvim"
+        src: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}/bin/nvim"
         dest: "{{ ansible_env.HOME }}/.local/bin/nvim"
         state: link
 
@@ -44,6 +53,15 @@
         - wl-clipboard
         - ripgrep
         - curl
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Install packages used by nvim on macOS
+      community.general.homebrew:
+        name: "{{ macos_nvim_formulae }}"
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+        path: "{{ homebrew_prefix }}/bin"
+      when: dev_setup_platform == 'macos'
 
     - name: Set nvim as default editor for git
       community.general.git_config:
@@ -77,15 +95,16 @@
 
     - name: Download golang
       get_url:
-        url: https://golang.org/dl/{{ golang_tar }}.gz
-        dest: "{{ inventory_dir }}/tarballs/{{ golang_tar }}"
+        url: "https://golang.org/dl/{{ golang_archive_name }}.tar.gz"
+        dest: "{{ inventory_dir }}/tarballs/{{ golang_archive_name }}.tar"
         mode: "0644"
 
     - name: Extract golang
       unarchive:
-        src: "{{ inventory_dir }}/tarballs/{{ golang_tar }}"
+        src: "{{ inventory_dir }}/tarballs/{{ golang_archive_name }}.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/go/bin/go"
 
     - name: Enable golang bashrc snippet
       file:
@@ -97,7 +116,7 @@
 
     - name: Do tool installation in nvim
       shell: >
-        nvim --headless -c 'lua m = require("mason").setup()' \
+        {{ ansible_env.HOME }}/.local/bin/nvim --headless -c 'lua m = require("mason").setup()' \
                         -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
                         -c 'MasonInstall goimports lua-language-server' \
                         -c 'MasonInstall ansible-language-server starpls' \
@@ -109,3 +128,4 @@
         executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
         creates: "{{ ansible_env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
+      when: install_nvim_tools | bool

@@ -2,15 +2,27 @@
 - name: Setup glow
   hosts: all
   tags: glow
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Fetch glow
+    - name: Install glow on macOS
+      community.general.homebrew:
+        name: glow
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+        path: "{{ homebrew_prefix }}/bin"
+      when: dev_setup_platform == 'macos'
+
+    - name: Fetch glow on Ubuntu
       get_url:
         url: "https://github.com/charmbracelet/glow/releases/download/v{{ glow_version }}/glow_{{ glow_version }}_amd64.deb"
         dest: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_amd64.deb"
         mode: "0644"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Install glow
+    - name: Install glow on Ubuntu
       become: true
       apt:
         deb: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_amd64.deb"
         state: present
+      when: dev_setup_platform == 'ubuntu'

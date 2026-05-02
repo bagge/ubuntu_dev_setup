@@ -2,25 +2,39 @@
 - name: Install fonts
   hosts: all
   tags: fonts
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Create font directory
+    - name: Install Hack Nerd Font on macOS
+      community.general.homebrew_cask:
+        name: font-hack-nerd-font
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+      when: dev_setup_platform == 'macos'
+
+    - name: Create font directory on Ubuntu
       file:
         path: "{{ ansible_env.HOME }}/.local/share/fonts"
         state: directory
         mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Download fonts
+    - name: Download fonts on Ubuntu
       get_url:
         url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip"
         dest: "{{ inventory_dir }}/tarballs/Hack.zip"
         mode: "0644"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Extract fonts
+    - name: Extract fonts on Ubuntu
       unarchive:
         src: "{{ inventory_dir }}/tarballs/Hack.zip"
         dest: "{{ ansible_env.HOME }}/.local/share/fonts"
         remote_src: true
+        creates: "{{ ansible_env.HOME }}/.local/share/fonts/HackNerdFont-Regular.ttf"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Update font cache
+    - name: Update font cache on Ubuntu
       command: fc-cache -f -v
       changed_when: false
+      when: dev_setup_platform == 'ubuntu'

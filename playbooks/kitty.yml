@@ -2,26 +2,39 @@
 - name: Setup kitty
   hosts: all
   tags: kitty
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Create directory for kitty.app
+    - name: Install kitty on macOS
+      community.general.homebrew_cask:
+        name: kitty
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+      when: dev_setup_platform == 'macos'
+
+    - name: Create directory for kitty.app on Ubuntu
       file:
         path: "{{ inventory_dir }}/tarballs/kitty.app"
         state: directory
         mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Download kitty release
+    - name: Download kitty release on Ubuntu
       get_url:
         url: "https://github.com/kovidgoyal/kitty/releases/download/v{{ kitty_version }}/kitty-{{ kitty_version }}-x86_64.txz"
         dest: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
         mode: "0644"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Extract kitty tarball
+    - name: Extract kitty tarball on Ubuntu
       unarchive:
         src: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
         dest: "{{ inventory_dir }}/tarballs/kitty.app"
         remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/kitty.app/bin/kitty"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Fix kitty path in desktop files
+    - name: Fix kitty path in desktop files on Ubuntu
       replace:
         path: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
         regexp: 'Exec=kitty'
@@ -29,8 +42,9 @@
       with_items:
         - kitty.desktop
         - kitty-open.desktop
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Fix kitty icon path in desktop files
+    - name: Fix kitty icon path in desktop files on Ubuntu
       replace:
         path: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
         regexp: 'Icon=kitty'
@@ -38,14 +52,16 @@
       with_items:
         - kitty.desktop
         - kitty-open.desktop
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Create destination directory for desktop files
+    - name: Create destination directory for desktop files on Ubuntu
       file:
         path: "{{ ansible_env.HOME }}/.local/share/applications"
         state: directory
         mode: "0775"
+      when: dev_setup_platform == 'ubuntu'
 
-    - name: Install kitty desktop file
+    - name: Install kitty desktop file on Ubuntu
       copy:
         src: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
         dest: "{{ ansible_env.HOME }}/.local/share/applications/{{ item }}"
@@ -53,6 +69,13 @@
       with_items:
         - kitty.desktop
         - kitty-open.desktop
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Create config directory
+      file:
+        path: "{{ ansible_env.HOME }}/.config"
+        state: directory
+        mode: "0755"
 
     - name: Make xdg-terminal-exec (and hence desktop environments that support it use kitty)
       copy:
@@ -60,10 +83,14 @@
           kitty.desktop
         dest: "{{ ansible_env.HOME }}/.config/xdg-terminals.list"
         mode: "0644"
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Configure gnome to use kitty as default terminal
       command: gsettings set org.gnome.desktop.default-applications.terminal exec "{{ ansible_env.HOME }}/.local/bin/kitty"
       changed_when: false
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | default(run_gnome_customization | default(true)) | bool
 
     - name: Create kitty config directory
       file:
@@ -77,11 +104,12 @@
         dest: "{{ ansible_env.HOME }}/.config/kitty/kitty.conf"
         state: link
 
-    - name: Link kitty installation
+    - name: Link kitty installation on Ubuntu
       file:
         src: "{{ inventory_dir }}/tarballs/kitty.app"
         dest: "{{ ansible_env.HOME }}/.local/kitty.app"
         state: link
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Create local bin directory
       file:
@@ -89,7 +117,7 @@
         state: directory
         mode: "0755"
 
-    - name: Link kitty binaries
+    - name: Link kitty binaries on Ubuntu
       file:
         src: "../kitty.app/bin/{{ item }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
@@ -97,6 +125,17 @@
       with_items:
         - kitty
         - kitten
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Link kitty binaries on macOS
+      file:
+        src: "/Applications/kitty.app/Contents/MacOS/{{ item }}"
+        dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+        state: link
+      with_items:
+        - kitty
+        - kitten
+      when: dev_setup_platform == 'macos'
 
     - name: Clone kitty-themes
       git:

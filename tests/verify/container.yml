@@ -1,0 +1,126 @@
+---
+- name: Verify containerized workstation setup
+  hosts: all
+  gather_facts: true
+  vars:
+    expected_default_snippets:
+      - 000-setup-location.bashrc
+      - 004-bash-history.bashrc
+      - 999-optional-auth.bashrc
+    expected_tool_snippets:
+      - 002-bash_it.bashrc
+      - 003-bazel-helpers.bashrc
+      - 005-fzf.bashrc
+      - 006-nvm.bashrc
+      - 007-golang.bashrc
+    expected_local_bins:
+      - bazel
+      - bat
+      - buildifier
+      - buildozer
+      - cat
+      - git-toprepo
+      - kitten
+      - kitty
+      - mdcat
+      - nvim
+      - repo
+      - unused_deps
+  tasks:
+    - name: Collect package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Check managed bashrc symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.bashrc"
+      register: bashrc_link
+
+    - name: Check managed bashrc.d symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.bashrc.d"
+      register: bashrc_d_link
+
+    - name: Assert bashrc links point into the test workspace
+      ansible.builtin.assert:
+        that:
+          - bashrc_link.stat.islnk
+          - bashrc_link.stat.lnk_source == inventory_dir + "/bashrc"
+          - bashrc_d_link.stat.islnk
+          - bashrc_d_link.stat.lnk_source == inventory_dir + "/bashrc.d"
+
+    - name: Check enabled bash snippets
+      ansible.builtin.stat:
+        path: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
+      loop: "{{ expected_default_snippets + expected_tool_snippets }}"
+      register: enabled_snippets
+
+    - name: Assert enabled bash snippets are symlinks
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.islnk
+      loop: "{{ enabled_snippets.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Check expected local binaries
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+      loop: "{{ expected_local_bins }}"
+      register: local_bins
+
+    - name: Assert expected local binaries exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.executable or item.stat.islnk
+      loop: "{{ local_bins.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Assert expected apt packages are installed
+      ansible.builtin.assert:
+        that:
+          - item in ansible_facts.packages
+      loop:
+        - bat
+        - curl
+        - git
+        - jq
+        - python3-pip
+        - python3-psutil
+        - ranger
+
+    - name: Read git editor config
+      ansible.builtin.command: git config --global core.editor
+      changed_when: false
+      register: git_editor
+
+    - name: Read git excludesfile config
+      ansible.builtin.command: git config --global core.excludesfile
+      changed_when: false
+      register: git_excludesfile
+
+    - name: Assert git global config
+      ansible.builtin.assert:
+        that:
+          - git_editor.stdout == "nvim"
+          - git_excludesfile.stdout == ansible_env.HOME + "/.gitignore"
+
+    - name: Read global gitignore
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.gitignore"
+      register: global_gitignore
+
+    - name: Assert global gitignore contains go.sum
+      ansible.builtin.assert:
+        that:
+          - "'go.sum' in (global_gitignore.content | b64decode).splitlines()"
+
+    - name: Check proprietary packages are absent in test mode
+      ansible.builtin.assert:
+        that:
+          - "'google-chrome-stable' not in ansible_facts.packages"
+          - "'docker.io' not in ansible_facts.packages"
+      when: test_mode | default(false) | bool

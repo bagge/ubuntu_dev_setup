@@ -2,6 +2,9 @@
 - name: Setup bazel
   hosts: all
   tags: bazel
+  vars:
+    bazelisk_asset: "{{ 'bazelisk-linux-amd64' if dev_setup_platform == 'ubuntu' else 'bazelisk-darwin-arm64' }}"
+    bazel_buildtools_target: "{{ 'linux-amd64' if dev_setup_platform == 'ubuntu' else 'darwin-arm64' }}"
   tasks:
     - name: Create local bin directory
       file:
@@ -11,49 +14,49 @@
 
     - name: Fetch bazelisk
       get_url:
-        url: "https://github.com/bazelbuild/bazelisk/releases/download/v{{ bazelisk_version }}/bazelisk-linux-amd64"
-        dest: "{{ ansible_env.HOME }}/.local/bin/bazelisk-linux-amd64"
+        url: "https://github.com/bazelbuild/bazelisk/releases/download/v{{ bazelisk_version }}/{{ bazelisk_asset }}"
+        dest: "{{ ansible_env.HOME }}/.local/bin/{{ bazelisk_asset }}"
         mode: "0755"
 
     - name: Link bazelisk
       file:
-        src: "{{ ansible_env.HOME }}/.local/bin/bazelisk-linux-amd64"
+        src: "{{ ansible_env.HOME }}/.local/bin/{{ bazelisk_asset }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/bazel"
         state: link
 
     - name: Fetch buildifier
       get_url:
-        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/buildifier-linux-amd64"
-        dest: "{{ ansible_env.HOME }}/.local/bin/buildifier-linux-amd64"
+        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/buildifier-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_env.HOME }}/.local/bin/buildifier-{{ bazel_buildtools_target }}"
         mode: "0755"
 
     - name: Link buildifier
       file:
-        src: "{{ ansible_env.HOME }}/.local/bin/buildifier-linux-amd64"
+        src: "{{ ansible_env.HOME }}/.local/bin/buildifier-{{ bazel_buildtools_target }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/buildifier"
         state: link
 
     - name: Fetch buildozer
       get_url:
-        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/buildozer-linux-amd64"
-        dest: "{{ ansible_env.HOME }}/.local/bin/buildozer-linux-amd64"
+        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/buildozer-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
         mode: "0755"
 
     - name: Link buildozer
       file:
-        src: "{{ ansible_env.HOME }}/.local/bin/buildozer-linux-amd64"
+        src: "{{ ansible_env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/buildozer"
         state: link
 
     - name: Fetch unused_deps
       get_url:
-        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/unused_deps-linux-amd64"
-        dest: "{{ ansible_env.HOME }}/.local/bin/unused_deps-linux-amd64"
+        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/unused_deps-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
         mode: "0755"
 
     - name: Link unused_deps
       file:
-        src: "{{ ansible_env.HOME }}/.local/bin/unused_deps-linux-amd64"
+        src: "{{ ansible_env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/unused_deps"
         state: link
 

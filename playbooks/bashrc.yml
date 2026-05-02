@@ -16,6 +16,14 @@
         state: link
         force: true
 
+    - name: Link bash_profile to home directory on macOS
+      file:
+        src: "{{ inventory_dir }}/bash_profile"
+        dest: "{{ ansible_env.HOME }}/.bash_profile"
+        state: link
+        force: true
+      when: dev_setup_platform == 'macos'
+
     - name: Enable default bashrc snippets
       file:
         src: "{{ inventory_dir }}/bashrc.d/{{ item }}"
@@ -25,3 +33,39 @@
         - "000-setup-location.bashrc"
         - "004-bash-history.bashrc"
         - "999-optional-auth.bashrc"
+
+    - name: Enable Homebrew bashrc snippet on macOS
+      file:
+        src: "{{ inventory_dir }}/bashrc.d/{{ item }}"
+        dest: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
+        state: link
+      with_items:
+        - "001-homebrew.bashrc"
+      when: dev_setup_platform == 'macos'
+
+    - name: Allow Homebrew Bash as a login shell on macOS
+      become: true
+      lineinfile:
+        path: /etc/shells
+        line: "{{ homebrew_prefix }}/bin/bash"
+        state: present
+      when:
+        - dev_setup_platform == 'macos'
+        - macos_set_login_shell | bool
+
+    - name: Read current login shell on macOS
+      command: dscl . -read "/Users/{{ ansible_user_id }}" UserShell
+      register: macos_login_shell
+      changed_when: false
+      when:
+        - dev_setup_platform == 'macos'
+        - macos_set_login_shell | bool
+
+    - name: Set Homebrew Bash as login shell on macOS
+      become: true
+      command: chsh -s "{{ homebrew_prefix }}/bin/bash" "{{ ansible_user_id }}"
+      changed_when: true
+      when:
+        - dev_setup_platform == 'macos'
+        - macos_set_login_shell | bool
+        - homebrew_prefix + '/bin/bash' not in macos_login_shell.stdout

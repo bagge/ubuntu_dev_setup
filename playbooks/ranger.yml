@@ -2,12 +2,23 @@
 - name: Setup ranger
   hosts: all
   tags: ranger
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
-    - name: Install ranger
+    - name: Install ranger on Ubuntu
       become: true
       apt:
         name: ranger
         state: present
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Install ranger on macOS
+      community.general.homebrew:
+        name: ranger
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+        path: "{{ homebrew_prefix }}/bin"
+      when: dev_setup_platform == 'macos'
 
     - name: Create ranger config directory
       file:
