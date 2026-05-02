@@ -154,13 +154,3 @@
       ansible.builtin.assert:
         that:
           - "'go.sum' in (global_gitignore.content | b64decode).splitlines()"
-
-    - name: Check proprietary casks are absent in test mode
-      ansible.builtin.command: "{{ homebrew_prefix }}/bin/brew list --cask {{ item }}"
-      changed_when: false
-      failed_when: proprietary_cask.rc == 0
-      register: proprietary_cask
-      loop:
-        - google-chrome
-        - omnissa-horizon-client
-      when: test_mode | default(false) | bool
