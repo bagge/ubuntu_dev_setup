@@ -26,6 +26,9 @@ for file in "${bash_files[@]}"; do
     bash -n "${file}"
 done
 
+python3 -m py_compile tools/sync_versions.py
+python3 -m unittest tests/test_sync_versions.py
+
 if command -v shellcheck >/dev/null 2>&1; then
     shellcheck \
         tests/container/run.sh \

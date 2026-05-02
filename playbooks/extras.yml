@@ -4,8 +4,6 @@
   tags: extras
   vars:
     chrome_deb: "google-chrome-stable_current_amd64.deb"
-    horizon_url: "https://download3.omnissa.com/software/CART25FQ2_LIN64_DEBPKG_2406"
-    horizon_deb: "VMware-Horizon-Client-2406-8.13.0-9995429239.x64.deb"
     install_docker: "{{ ansible_env.IS_GITHUB_CI is not defined }}"
     install_proprietary_extras: true
   environment:
