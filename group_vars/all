@@ -5,11 +5,16 @@ bazelisk_version: 1.27.0
 fzf_version: 0.67.0
 glow_version: 2.1.1
 golang_version: 1.25.5
+nerd_fonts_version: 3.2.1
+horizon_deb: VMware-Horizon-Client-2406-8.13.0-9995429239.x64.deb
+horizon_url: https://download3.omnissa.com/software/CART25FQ2_LIN64_DEBPKG_2406
 homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 homebrew_prefix: /opt/homebrew
 homebrew_update: false
 kitty_version: 0.45.0
 macos_set_login_shell: false
 mdcat_version: 2.7.1
+node_major_version: 20
+nvm_version: 0.40.0
 nvim_version: 0.11.5
 toprepo_version: 0.6.0

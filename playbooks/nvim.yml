@@ -72,18 +72,23 @@
     - name: Install nvm # noqa command-instead-of-module risky-shell-pipe
       become: false
       shell: >
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | PROFILE=/dev/null bash
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh | PROFILE=/dev/null bash
       args:
         executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
         creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
 
-    - name: Install Node.js
-      shell: ". {{ ansible_env.HOME }}/.nvm/nvm.sh && nvm install 20"
+    - name: Install Node.js # noqa command-instead-of-module
+      shell: |
+        . {{ ansible_env.HOME }}/.nvm/nvm.sh
+        if ! nvm version {{ node_major_version }} >/dev/null 2>&1; then
+          nvm install {{ node_major_version }}
+        fi
       args:
-        creates: "{{ ansible_env.HOME }}/.nvm/versions/node"
         chdir: "{{ ansible_env.HOME }}"
         executable: /bin/bash
+      register: node_install
+      changed_when: node_install.stdout | length > 0
 
     - name: Enable nvm bashrc snippet
       file:

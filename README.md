@@ -58,6 +58,28 @@ The macOS test uses the local host rather than Docker because macOS cannot be
 run in the Ubuntu container harness. GitHub Actions runs the same test on an
 ephemeral Apple Silicon macOS runner.
 
+## Updating pinned tool versions
+
+Pinned tool versions live in `group_vars/all`. To check whether newer upstream
+versions are available, run:
+
+```bash
+$ python3 tools/sync_versions.py --check
+```
+
+To update the automatic pins in `group_vars/all`, run:
+
+```bash
+$ python3 tools/sync_versions.py --write
+```
+
+The updater uses GitHub, Go, and Node.js release metadata and verifies expected
+release assets before accepting a new version. If `GITHUB_TOKEN` is set it will
+be used for GitHub API requests. Omnissa Horizon Client is included in the report
+as a manual pin because the vendor download page does not provide a stable
+version API. Homebrew formulae and casks are not pinned here; Homebrew resolves
+those versions during installation.
+
 Other things to remember to transfer when changing computers:
 - Stored passwords in chrome
 
