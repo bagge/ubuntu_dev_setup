@@ -3,8 +3,6 @@
   hosts: all
   tags: extras
   vars:
-    install_docker: "{{ ansible_env.IS_GITHUB_CI is not defined }}"
-    install_proprietary_extras: true
     toprepo_asset: "git-toprepo-{{ toprepo_version }}-{{ dev_setup_artifacts.toprepo_target }}"
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
@@ -60,7 +58,7 @@
         mode: "0644"
       when:
         - dev_setup_platform == 'ubuntu'
-        - install_proprietary_extras | bool
+        - install_google_chrome | bool
 
     - name: Install google-chrome-stable on Ubuntu
       become: true
@@ -69,19 +67,25 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - install_proprietary_extras | bool
+        - install_google_chrome | bool
 
-    - name: Install proprietary casks on macOS
+    - name: Install google-chrome on macOS
       community.general.homebrew_cask:
-        name: "{{ item }}"
+        name: google-chrome
         state: present
         update_homebrew: "{{ homebrew_update | bool }}"
-      loop:
-        - google-chrome
-        - omnissa-horizon-client
       when:
         - dev_setup_platform == 'macos'
-        - install_proprietary_extras | bool
+        - install_google_chrome | bool
+
+    - name: Install omnissa-horizon-client on macOS
+      community.general.homebrew_cask:
+        name: omnissa-horizon-client
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+      when:
+        - dev_setup_platform == 'macos'
+        - install_omnissa_horizon | bool
 
     - name: Download vmware-horizon-client on Ubuntu
       get_url:
@@ -91,7 +95,7 @@
         mode: "0644"
       when:
         - dev_setup_platform == 'ubuntu'
-        - install_proprietary_extras | bool
+        - install_omnissa_horizon | bool
 
     - name: Install vmware-horizon-client on Ubuntu
       become: true
@@ -100,4 +104,4 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - install_proprietary_extras | bool
+        - install_omnissa_horizon | bool

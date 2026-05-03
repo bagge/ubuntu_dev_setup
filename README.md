@@ -17,6 +17,14 @@ The playbook is executed with the following command:
 $ ansible-playbook setup.yml
 ```
 
+The default setup includes Docker, Google Chrome, and Omnissa Horizon Client on
+supported platforms. For a lighter install, disable them independently:
+
+```bash
+$ ansible-playbook setup.yml --extra-vars install_docker=false
+$ ansible-playbook setup.yml --extra-vars "install_docker=false install_google_chrome=false install_omnissa_horizon=false"
+```
+
 Supported platforms:
 - Ubuntu on amd64
 - macOS on Apple Silicon
