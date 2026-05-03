@@ -77,4 +77,5 @@ export SCM_GIT_GITSTATUS_DIR="${DEVENV_SETUP_PATH}/repos/gitstatus"
 export POWERLINE_LEFT_PROMPT="scm python_venv cwd"
 export POWERLINE_RIGHT_PROMPT=" "
 export POWERLINE_PADDING=1
+# shellcheck source=/dev/null
 source "$BASH_IT"/bash_it.sh

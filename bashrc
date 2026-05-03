@@ -7,10 +7,12 @@ case $- in
 esac
 
 
-export PATH=$PATH:~/bin:~/.local/bin:~/go/bin
-export MANPATH=$MANPATH:~/.local/share/man
+export PATH="${PATH}:${HOME}/bin:${HOME}/.local/bin:${HOME}/go/bin"
+export MANPATH="${MANPATH}:${HOME}/.local/share/man"
 
 # Load customizations
-for f in ~/.bashrc.d/enabled/*; do
-  source $f
+for f in "${HOME}"/.bashrc.d/enabled/*; do
+  [ -e "${f}" ] || continue
+  # shellcheck source=/dev/null
+  source "${f}"
 done

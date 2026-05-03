@@ -30,9 +30,5 @@ python3 -m py_compile tools/sync_versions.py
 python3 -m unittest tests/test_sync_versions.py
 
 if command -v shellcheck >/dev/null 2>&1; then
-    shellcheck \
-        tests/container/run.sh \
-        tests/container/run-in-container.sh \
-        tests/macos/run.sh \
-        tests/shell/check.sh
+    shellcheck "${bash_files[@]}"
 fi
