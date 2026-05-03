@@ -3,9 +3,9 @@
   hosts: all
   tags: bazel
   vars:
-    bazelisk_asset: "{{ 'bazelisk-linux-amd64' if dev_setup_platform == 'ubuntu' else 'bazelisk-darwin-arm64' }}"
+    bazelisk_asset: "{{ dev_setup_artifacts.bazelisk_asset }}"
     bazelisk_checksum: "{{ bazelisk_linux_checksum if dev_setup_platform == 'ubuntu' else bazelisk_macos_checksum }}"
-    bazel_buildtools_target: "{{ 'linux-amd64' if dev_setup_platform == 'ubuntu' else 'darwin-arm64' }}"
+    bazel_buildtools_target: "{{ dev_setup_artifacts.bazel_buildtools_target }}"
     bazel_buildifier_checksum: "{{ bazel_buildifier_linux_checksum if dev_setup_platform == 'ubuntu' else bazel_buildifier_macos_checksum }}"
     bazel_buildozer_checksum: "{{ bazel_buildozer_linux_checksum if dev_setup_platform == 'ubuntu' else bazel_buildozer_macos_checksum }}"
     bazel_unused_deps_checksum: "{{ bazel_unused_deps_linux_checksum if dev_setup_platform == 'ubuntu' else bazel_unused_deps_macos_checksum }}"

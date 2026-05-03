@@ -5,6 +5,7 @@
   vars:
     install_docker: "{{ ansible_env.IS_GITHUB_CI is not defined }}"
     install_proprietary_extras: true
+    toprepo_asset: "git-toprepo-{{ toprepo_version }}-{{ dev_setup_artifacts.toprepo_target }}"
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
   tasks:
@@ -37,7 +38,7 @@
 
     - name: Download toprepo on Ubuntu
       get_url:
-        url: "https://github.com/meroton/git-toprepo/releases/download/{{ toprepo_version }}/git-toprepo-{{ toprepo_version }}-linux-x86_64"
+        url: "https://github.com/meroton/git-toprepo/releases/download/{{ toprepo_version }}/{{ toprepo_asset }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
         checksum: "sha256:{{ toprepo_linux_checksum }}"
         mode: "0755"

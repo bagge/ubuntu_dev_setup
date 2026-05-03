@@ -7,6 +7,32 @@ from tools import sync_versions
 
 
 class SyncVersionsTest(unittest.TestCase):
+    def test_artifact_matrix_matches_supported_platforms(self):
+        self.assertEqual(
+            sync_versions.ARTIFACTS["ubuntu_amd64"],
+            {
+                "bazel_buildtools_target": "linux-amd64",
+                "bazelisk_asset": "bazelisk-linux-amd64",
+                "deb_arch": "amd64",
+                "glow_deb_arch": "amd64",
+                "golang_target": "linux-amd64",
+                "kitty_target": "x86_64",
+                "mdcat_target": "x86_64-unknown-linux-gnu",
+                "nvim_archive_name": "nvim-linux-x86_64",
+                "toprepo_target": "linux-x86_64",
+            },
+        )
+        self.assertEqual(
+            sync_versions.ARTIFACTS["macos_arm64"],
+            {
+                "bazel_buildtools_target": "darwin-arm64",
+                "bazelisk_asset": "bazelisk-darwin-arm64",
+                "golang_target": "darwin-arm64",
+                "mdcat_target": "aarch64-apple-darwin",
+                "nvim_archive_name": "nvim-macos-arm64",
+            },
+        )
+
     def test_load_vars_reads_simple_group_vars_file(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "all"

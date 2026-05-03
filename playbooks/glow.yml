@@ -15,8 +15,8 @@
 
     - name: Fetch glow on Ubuntu
       get_url:
-        url: "https://github.com/charmbracelet/glow/releases/download/v{{ glow_version }}/glow_{{ glow_version }}_amd64.deb"
-        dest: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_amd64.deb"
+        url: "https://github.com/charmbracelet/glow/releases/download/v{{ glow_version }}/glow_{{ glow_version }}_{{ dev_setup_artifacts.glow_deb_arch }}.deb"
+        dest: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_{{ dev_setup_artifacts.glow_deb_arch }}.deb"
         checksum: "sha256:{{ glow_ubuntu_checksum }}"
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
@@ -24,6 +24,6 @@
     - name: Install glow on Ubuntu
       become: true
       apt:
-        deb: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_amd64.deb"
+        deb: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_{{ dev_setup_artifacts.glow_deb_arch }}.deb"
         state: present
       when: dev_setup_platform == 'ubuntu'
