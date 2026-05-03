@@ -110,12 +110,25 @@ vendor download page does not provide a stable version API, but the declared
 package URL is still pinned by checksum. Homebrew formulae and casks are not
 pinned here; Homebrew resolves those versions during installation.
 
+## Transfer bundle
+
+Create a transfer archive from selected local dotfiles, credentials, SSH
+configuration, and browser bookmarks with:
+
+```bash
+$ ./create_bundle.sh
+```
+
+The script writes `sensitive-transfer-bundle.tar.gz` in the current directory.
+The archive contains secrets and is not encrypted, so store and move it
+carefully. Missing optional paths are skipped with warnings.
+
 Other things to remember to transfer when changing computers:
 - Stored passwords in chrome
 
 On the new machine, remember to do the following manually:
 - Import stored passwords in chrome
-- Untar the transfer bundle in the home directory
+- Untar `sensitive-transfer-bundle.tar.gz` in the home directory
 - Start neovim to have lazy download all plugins
 - Authenticate Copilot in neovim
 
