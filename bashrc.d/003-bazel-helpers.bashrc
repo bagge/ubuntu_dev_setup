@@ -11,7 +11,7 @@ bazel_sha256 () {(
         echo -e "    <path>: path to the file to calculate checksum for"
     )}
 
-    local OPTIND opt h
+    local OPTIND opt
     while getopts ":h" opt ; do
         case "${opt}" in
             h) usage
@@ -25,13 +25,13 @@ bazel_sha256 () {(
     done
     shift $((OPTIND-1))
 
-    if [ -z "$1" ]; then
+    if [ -z "${1:-}" ]; then
         echo "No path specified"
         usage
         exit 1
     fi
 
-    sha256sum $1 | cut -d' ' -f1 | xxd -r -p | base64 | sed 's/^/sha256-/'
+    sha256sum "$1" | cut -d' ' -f1 | xxd -r -p | base64 | sed 's/^/sha256-/'
 )}
 
 regenerate_bazel_completion () {(
@@ -46,7 +46,7 @@ regenerate_bazel_completion () {(
         echo -e "            (not used if -v is used)"
     )}
 
-    local OPTIND opt h v VERSION
+    local OPTIND opt VERSION
     while getopts ":hv:" opt ; do
         case "${opt}" in
             h) usage
@@ -62,27 +62,31 @@ regenerate_bazel_completion () {(
     done
     shift $((OPTIND-1))
 
-    if [ -z "$VERSION" ]; then
-        if [ -z "$1" ]; then
+    if [ -z "${VERSION:-}" ]; then
+        if [ -z "${1:-}" ]; then
             echo "No path or version specified"
             usage
             exit 1
         fi
-        if [ ! -f $1/.bazelversion ]; then
+        if [ ! -f "$1/.bazelversion" ]; then
             echo "Missing .bazelversion file in $1"
             exit 1
         fi
-        VERSION=$(cat $1/.bazelversion)
+        VERSION=$(cat "$1/.bazelversion")
     fi
 
-    rm -f ~/.bazelcomplete
+    rm -f "${HOME}/.bazelcomplete"
 
-    curl -fsSL https://raw.githubusercontent.com/bazelbuild/bazel/${VERSION}/scripts/bazel-complete-header.bash >> ~/.bazelcomplete
-    curl -fsSL https://raw.githubusercontent.com/bazelbuild/bazel/${VERSION}/scripts/bazel-complete-template.bash >> ~/.bazelcomplete
-    bazel help completion >> ~/.bazelcomplete
-    source ~/.bazelcomplete
+    {
+        curl -fsSL "https://raw.githubusercontent.com/bazelbuild/bazel/${VERSION}/scripts/bazel-complete-header.bash"
+        curl -fsSL "https://raw.githubusercontent.com/bazelbuild/bazel/${VERSION}/scripts/bazel-complete-template.bash"
+        bazel help completion
+    } >> "${HOME}/.bazelcomplete"
+    # shellcheck source=/dev/null
+    source "${HOME}/.bazelcomplete"
 )}
 
-if [ -f ~/.bazelcomplete ]; then
-    source ~/.bazelcomplete
+if [ -f "${HOME}/.bazelcomplete" ]; then
+    # shellcheck source=/dev/null
+    source "${HOME}/.bazelcomplete"
 fi
