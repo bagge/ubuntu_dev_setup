@@ -21,15 +21,15 @@
 
     - name: Download kitty release on Ubuntu
       get_url:
-        url: "https://github.com/kovidgoyal/kitty/releases/download/v{{ kitty_version }}/kitty-{{ kitty_version }}-x86_64.txz"
-        dest: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
+        url: "https://github.com/kovidgoyal/kitty/releases/download/v{{ kitty_version }}/kitty-{{ kitty_version }}-{{ dev_setup_artifacts.kitty_target }}.txz"
+        dest: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-{{ dev_setup_artifacts.kitty_target }}.tar"
         checksum: "sha256:{{ kitty_linux_checksum }}"
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Extract kitty tarball on Ubuntu
       unarchive:
-        src: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-x86_64.tar"
+        src: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-{{ dev_setup_artifacts.kitty_target }}.tar"
         dest: "{{ inventory_dir }}/tarballs/kitty.app"
         remote_src: true
         creates: "{{ inventory_dir }}/tarballs/kitty.app/bin/kitty"

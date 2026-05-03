@@ -2,6 +2,24 @@
 - name: Check supported platform
   hosts: all
   tags: always
+  vars:
+    dev_setup_artifact_map:
+      ubuntu_amd64:
+        bazel_buildtools_target: linux-amd64
+        bazelisk_asset: bazelisk-linux-amd64
+        deb_arch: amd64
+        glow_deb_arch: amd64
+        golang_target: linux-amd64
+        kitty_target: x86_64
+        mdcat_target: x86_64-unknown-linux-gnu
+        nvim_archive_name: nvim-linux-x86_64
+        toprepo_target: linux-x86_64
+      macos_arm64:
+        bazel_buildtools_target: darwin-arm64
+        bazelisk_asset: bazelisk-darwin-arm64
+        golang_target: darwin-arm64
+        mdcat_target: aarch64-apple-darwin
+        nvim_archive_name: nvim-macos-arm64
   tasks:
     - name: Determine setup platform
       ansible.builtin.set_fact:
@@ -16,16 +34,23 @@
           arm64{%- else -%}
           {{ ansible_architecture }}{%- endif -%}
 
+    - name: Determine setup platform and architecture key
+      ansible.builtin.set_fact:
+        dev_setup_platform_arch_key: "{{ dev_setup_platform }}_{{ dev_setup_arch }}"
+
     - name: Assert supported platform
       ansible.builtin.assert:
         that:
           - dev_setup_platform in ['ubuntu', 'macos']
-          - (dev_setup_platform == 'ubuntu' and dev_setup_arch == 'amd64') or
-            (dev_setup_platform == 'macos' and dev_setup_arch == 'arm64')
+          - dev_setup_platform_arch_key in dev_setup_artifact_map
         fail_msg: >-
           Unsupported platform: {{ ansible_system }} {{ ansible_distribution | default('') }}
           {{ ansible_architecture }}. Supported platforms are Ubuntu amd64 and
           macOS Apple Silicon.
+
+    - name: Set platform artifact names
+      ansible.builtin.set_fact:
+        dev_setup_artifacts: "{{ dev_setup_artifact_map[dev_setup_platform_arch_key] }}"
 
     - name: Check for Homebrew on macOS
       ansible.builtin.stat:

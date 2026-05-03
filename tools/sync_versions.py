@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report and update pinned tool versions used by the playbooks."""
+"""Report and update pinned tool versions and checksums used by the playbooks."""
 
 from __future__ import annotations
 
@@ -20,6 +20,29 @@ from typing import Any, Callable
 REPO_ROOT = Path(__file__).resolve().parents[1]
 GROUP_VARS = REPO_ROOT / "group_vars" / "all"
 TIMEOUT_SECONDS = 20
+
+ARTIFACTS = {
+    "ubuntu_amd64": {
+        "bazel_buildtools_target": "linux-amd64",
+        "bazelisk_asset": "bazelisk-linux-amd64",
+        "deb_arch": "amd64",
+        "glow_deb_arch": "amd64",
+        "golang_target": "linux-amd64",
+        "kitty_target": "x86_64",
+        "mdcat_target": "x86_64-unknown-linux-gnu",
+        "nvim_archive_name": "nvim-linux-x86_64",
+        "toprepo_target": "linux-x86_64",
+    },
+    "macos_arm64": {
+        "bazel_buildtools_target": "darwin-arm64",
+        "bazelisk_asset": "bazelisk-darwin-arm64",
+        "golang_target": "darwin-arm64",
+        "mdcat_target": "aarch64-apple-darwin",
+        "nvim_archive_name": "nvim-macos-arm64",
+    },
+}
+UBUNTU = ARTIFACTS["ubuntu_amd64"]
+MACOS = ARTIFACTS["macos_arm64"]
 
 
 @dataclass(frozen=True)
@@ -50,20 +73,38 @@ SOURCES: tuple[Source, ...] = (
         "bazelbuild/buildtools",
         "v",
         (
-            "buildifier-linux-amd64",
-            "buildifier-darwin-arm64",
-            "buildozer-linux-amd64",
-            "buildozer-darwin-arm64",
-            "unused_deps-linux-amd64",
-            "unused_deps-darwin-arm64",
+            f"buildifier-{UBUNTU['bazel_buildtools_target']}",
+            f"buildifier-{MACOS['bazel_buildtools_target']}",
+            f"buildozer-{UBUNTU['bazel_buildtools_target']}",
+            f"buildozer-{MACOS['bazel_buildtools_target']}",
+            f"unused_deps-{UBUNTU['bazel_buildtools_target']}",
+            f"unused_deps-{MACOS['bazel_buildtools_target']}",
         ),
         checksum_assets=(
-            ChecksumAsset("buildifier-linux-amd64", "bazel_buildifier_linux_checksum"),
-            ChecksumAsset("buildifier-darwin-arm64", "bazel_buildifier_macos_checksum"),
-            ChecksumAsset("buildozer-linux-amd64", "bazel_buildozer_linux_checksum"),
-            ChecksumAsset("buildozer-darwin-arm64", "bazel_buildozer_macos_checksum"),
-            ChecksumAsset("unused_deps-linux-amd64", "bazel_unused_deps_linux_checksum"),
-            ChecksumAsset("unused_deps-darwin-arm64", "bazel_unused_deps_macos_checksum"),
+            ChecksumAsset(
+                f"buildifier-{UBUNTU['bazel_buildtools_target']}",
+                "bazel_buildifier_linux_checksum",
+            ),
+            ChecksumAsset(
+                f"buildifier-{MACOS['bazel_buildtools_target']}",
+                "bazel_buildifier_macos_checksum",
+            ),
+            ChecksumAsset(
+                f"buildozer-{UBUNTU['bazel_buildtools_target']}",
+                "bazel_buildozer_linux_checksum",
+            ),
+            ChecksumAsset(
+                f"buildozer-{MACOS['bazel_buildtools_target']}",
+                "bazel_buildozer_macos_checksum",
+            ),
+            ChecksumAsset(
+                f"unused_deps-{UBUNTU['bazel_buildtools_target']}",
+                "bazel_unused_deps_linux_checksum",
+            ),
+            ChecksumAsset(
+                f"unused_deps-{MACOS['bazel_buildtools_target']}",
+                "bazel_unused_deps_macos_checksum",
+            ),
         ),
     ),
     Source(
@@ -72,10 +113,10 @@ SOURCES: tuple[Source, ...] = (
         "github",
         "bazelbuild/bazelisk",
         "v",
-        ("bazelisk-linux-amd64", "bazelisk-darwin-arm64"),
+        (UBUNTU["bazelisk_asset"], MACOS["bazelisk_asset"]),
         checksum_assets=(
-            ChecksumAsset("bazelisk-linux-amd64", "bazelisk_linux_checksum"),
-            ChecksumAsset("bazelisk-darwin-arm64", "bazelisk_macos_checksum"),
+            ChecksumAsset(UBUNTU["bazelisk_asset"], "bazelisk_linux_checksum"),
+            ChecksumAsset(MACOS["bazelisk_asset"], "bazelisk_macos_checksum"),
         ),
     ),
     Source("fzf", "fzf_version", "github", "junegunn/fzf", "v"),
@@ -85,9 +126,12 @@ SOURCES: tuple[Source, ...] = (
         "github",
         "charmbracelet/glow",
         "v",
-        ("glow_{version}_amd64.deb",),
+        (f"glow_{{version}}_{UBUNTU['glow_deb_arch']}.deb",),
         checksum_assets=(
-            ChecksumAsset("glow_{version}_amd64.deb", "glow_ubuntu_checksum"),
+            ChecksumAsset(
+                f"glow_{{version}}_{UBUNTU['glow_deb_arch']}.deb",
+                "glow_ubuntu_checksum",
+            ),
         ),
     ),
     Source(
@@ -95,8 +139,14 @@ SOURCES: tuple[Source, ...] = (
         "golang_version",
         "go",
         checksum_assets=(
-            ChecksumAsset("go{version}.linux-amd64.tar.gz", "golang_linux_checksum"),
-            ChecksumAsset("go{version}.darwin-arm64.tar.gz", "golang_macos_checksum"),
+            ChecksumAsset(
+                f"go{{version}}.{UBUNTU['golang_target']}.tar.gz",
+                "golang_linux_checksum",
+            ),
+            ChecksumAsset(
+                f"go{{version}}.{MACOS['golang_target']}.tar.gz",
+                "golang_macos_checksum",
+            ),
         ),
     ),
     Source(
@@ -114,9 +164,12 @@ SOURCES: tuple[Source, ...] = (
         "github",
         "kovidgoyal/kitty",
         "v",
-        ("kitty-{version}-x86_64.txz",),
+        (f"kitty-{{version}}-{UBUNTU['kitty_target']}.txz",),
         checksum_assets=(
-            ChecksumAsset("kitty-{version}-x86_64.txz", "kitty_linux_checksum"),
+            ChecksumAsset(
+                f"kitty-{{version}}-{UBUNTU['kitty_target']}.txz",
+                "kitty_linux_checksum",
+            ),
         ),
     ),
     Source(
@@ -125,11 +178,11 @@ SOURCES: tuple[Source, ...] = (
         "github",
         "swsnr/mdcat",
         "mdcat-",
-        ("mdcat-{version}-x86_64-unknown-linux-gnu.tar.gz",),
+        (f"mdcat-{{version}}-{UBUNTU['mdcat_target']}.tar.gz",),
         "Ubuntu-only in this playbook.",
         checksum_assets=(
             ChecksumAsset(
-                "mdcat-{version}-x86_64-unknown-linux-gnu.tar.gz",
+                f"mdcat-{{version}}-{UBUNTU['mdcat_target']}.tar.gz",
                 "mdcat_linux_checksum",
             ),
         ),
@@ -166,10 +219,19 @@ SOURCES: tuple[Source, ...] = (
         "github",
         "neovim/neovim",
         "v",
-        ("nvim-linux-x86_64.tar.gz", "nvim-macos-arm64.tar.gz"),
+        (
+            f"{UBUNTU['nvim_archive_name']}.tar.gz",
+            f"{MACOS['nvim_archive_name']}.tar.gz",
+        ),
         checksum_assets=(
-            ChecksumAsset("nvim-linux-x86_64.tar.gz", "nvim_linux_checksum"),
-            ChecksumAsset("nvim-macos-arm64.tar.gz", "nvim_macos_checksum"),
+            ChecksumAsset(
+                f"{UBUNTU['nvim_archive_name']}.tar.gz",
+                "nvim_linux_checksum",
+            ),
+            ChecksumAsset(
+                f"{MACOS['nvim_archive_name']}.tar.gz",
+                "nvim_macos_checksum",
+            ),
         ),
     ),
     Source(
@@ -187,9 +249,12 @@ SOURCES: tuple[Source, ...] = (
         "github",
         "meroton/git-toprepo",
         "",
-        ("git-toprepo-{version}-linux-x86_64",),
+        (f"git-toprepo-{{version}}-{UBUNTU['toprepo_target']}",),
         checksum_assets=(
-            ChecksumAsset("git-toprepo-{version}-linux-x86_64", "toprepo_linux_checksum"),
+            ChecksumAsset(
+                f"git-toprepo-{{version}}-{UBUNTU['toprepo_target']}",
+                "toprepo_linux_checksum",
+            ),
         ),
     ),
     Source(
@@ -425,8 +490,8 @@ def go_latest(_: Source) -> tuple[str, str]:
         if not version or "rc" in version or "beta" in version:
             continue
         files = {item.get("filename", "") for item in release.get("files", [])}
-        linux = f"{version}.linux-amd64.tar.gz"
-        darwin = f"{version}.darwin-arm64.tar.gz"
+        linux = f"{version}.{UBUNTU['golang_target']}.tar.gz"
+        darwin = f"{version}.{MACOS['golang_target']}.tar.gz"
         missing = sorted({linux, darwin} - files)
         if missing:
             raise VersionSyncError(

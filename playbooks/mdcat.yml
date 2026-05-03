@@ -3,7 +3,7 @@
   hosts: all
   tags: mdcat
   vars:
-    mdcat_target: "{{ 'x86_64-unknown-linux-gnu' if dev_setup_platform == 'ubuntu' else 'aarch64-apple-darwin' }}"
+    mdcat_target: "{{ dev_setup_artifacts.mdcat_target }}"
     mdcat_archive: "mdcat-{{ mdcat_version }}-{{ mdcat_target }}"
   tasks:
     - name: Create local bin directory

@@ -3,9 +3,9 @@
   hosts: all
   tags: nvim
   vars:
-    nvim_archive_name: "{{ 'nvim-linux-x86_64' if dev_setup_platform == 'ubuntu' else 'nvim-macos-arm64' }}"
+    nvim_archive_name: "{{ dev_setup_artifacts.nvim_archive_name }}"
     nvim_checksum: "{{ nvim_linux_checksum if dev_setup_platform == 'ubuntu' else nvim_macos_checksum }}"
-    golang_archive_name: "{{ 'go' + golang_version + ('.linux-amd64' if dev_setup_platform == 'ubuntu' else '.darwin-arm64') }}"
+    golang_archive_name: "go{{ golang_version }}.{{ dev_setup_artifacts.golang_target }}"
     golang_checksum: "{{ golang_linux_checksum if dev_setup_platform == 'ubuntu' else golang_macos_checksum }}"
     install_nvim_tools: true
     macos_nvim_formulae:
