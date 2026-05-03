@@ -1,0 +1,65 @@
+---
+- name: Check guarded link destination
+  ansible.builtin.stat:
+    path: "{{ guarded_link_dest }}"
+    follow: false
+  register: guarded_link_dest_stat
+
+- name: Read guarded link target
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - "{{ guarded_link_dest }}"
+  changed_when: false
+  register: guarded_link_target
+  when:
+    - guarded_link_dest_stat.stat.exists
+    - guarded_link_dest_stat.stat.islnk | default(false)
+
+- name: Determine whether guarded link destination is managed
+  ansible.builtin.set_fact:
+    guarded_link_dest_is_managed: >-
+      {{
+        guarded_link_dest_stat.stat.exists and
+        (guarded_link_dest_stat.stat.islnk | default(false)) and
+        (guarded_link_target.stdout | default('')) == guarded_link_src
+      }}
+
+- name: Fail when guarded link destination is unmanaged
+  ansible.builtin.fail:
+    msg: >-
+      Refusing to replace unmanaged path {{ guarded_link_dest }}. Move it away
+      manually or rerun with replace_existing_dotfiles=true.
+  when:
+    - guarded_link_dest_stat.stat.exists
+    - not guarded_link_dest_is_managed | bool
+    - not replace_existing_dotfiles | bool
+
+- name: Back up unmanaged guarded link destination
+  ansible.builtin.command:
+    argv:
+      - mv
+      - "{{ guarded_link_dest }}"
+      - "{{ guarded_link_dest }}.backup.{{ ansible_date_time.iso8601_basic_short }}"
+  changed_when: true
+  when:
+    - guarded_link_dest_stat.stat.exists
+    - not guarded_link_dest_is_managed | bool
+    - replace_existing_dotfiles | bool
+    - backup_existing_dotfiles | bool
+
+- name: Remove unmanaged guarded link destination without backup
+  ansible.builtin.file:
+    path: "{{ guarded_link_dest }}"
+    state: absent
+  when:
+    - guarded_link_dest_stat.stat.exists
+    - not guarded_link_dest_is_managed | bool
+    - replace_existing_dotfiles | bool
+    - not backup_existing_dotfiles | bool
+
+- name: Install guarded link
+  ansible.builtin.file:
+    src: "{{ guarded_link_src }}"
+    dest: "{{ guarded_link_dest }}"
+    state: link

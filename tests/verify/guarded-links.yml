@@ -1,0 +1,125 @@
+---
+- name: Verify guarded link helper
+  hosts: localhost
+  gather_facts: true
+  vars:
+    guarded_link_test_root: >-
+      {{ lookup('env', 'TMPDIR') | default('/tmp', true) }}/ubuntu-dev-setup-guarded-link-test
+    guarded_link_source: "{{ guarded_link_test_root }}/managed-source"
+    guarded_link_fresh_dest: "{{ guarded_link_test_root }}/fresh-link"
+    guarded_link_unmanaged_dest: "{{ guarded_link_test_root }}/unmanaged"
+    replace_existing_dotfiles: false
+    backup_existing_dotfiles: true
+
+  tasks:
+    - name: Remove stale guarded link test directory
+      ansible.builtin.file:
+        path: "{{ guarded_link_test_root }}"
+        state: absent
+
+    - name: Create guarded link test directory
+      ansible.builtin.file:
+        path: "{{ guarded_link_test_root }}"
+        state: directory
+        mode: "0755"
+
+    - name: Create guarded link source file
+      ansible.builtin.copy:
+        dest: "{{ guarded_link_source }}"
+        content: "managed\n"
+        mode: "0644"
+
+    - name: Create link when destination is absent
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/guarded-link.yml"
+      vars:
+        guarded_link_src: "{{ guarded_link_source }}"
+        guarded_link_dest: "{{ guarded_link_fresh_dest }}"
+
+    - name: Check fresh guarded link
+      ansible.builtin.stat:
+        path: "{{ guarded_link_fresh_dest }}"
+        follow: false
+      register: guarded_link_fresh_stat
+
+    - name: Read fresh guarded link target
+      ansible.builtin.command:
+        argv:
+          - readlink
+          - "{{ guarded_link_fresh_dest }}"
+      changed_when: false
+      register: guarded_link_fresh_target
+
+    - name: Assert fresh guarded link target
+      ansible.builtin.assert:
+        that:
+          - guarded_link_fresh_stat.stat.islnk
+          - guarded_link_fresh_target.stdout == guarded_link_source
+
+    - name: Confirm correct existing symlink stays valid
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/guarded-link.yml"
+      vars:
+        guarded_link_src: "{{ guarded_link_source }}"
+        guarded_link_dest: "{{ guarded_link_fresh_dest }}"
+
+    - name: Create unmanaged destination
+      ansible.builtin.copy:
+        dest: "{{ guarded_link_unmanaged_dest }}"
+        content: "user-owned\n"
+        mode: "0644"
+
+    - name: Assert unmanaged destination fails by default
+      block:
+        - name: Attempt guarded link over unmanaged destination
+          ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/guarded-link.yml"
+          vars:
+            guarded_link_src: "{{ guarded_link_source }}"
+            guarded_link_dest: "{{ guarded_link_unmanaged_dest }}"
+
+        - name: Fail when guarded link unexpectedly succeeded
+          ansible.builtin.fail:
+            msg: Guarded link unexpectedly replaced unmanaged destination.
+      rescue:
+        - name: Assert guarded link failure message
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_result.msg is search('Refusing to replace unmanaged path')
+
+    - name: Replace unmanaged destination with backup when explicitly enabled
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/guarded-link.yml"
+      vars:
+        guarded_link_src: "{{ guarded_link_source }}"
+        guarded_link_dest: "{{ guarded_link_unmanaged_dest }}"
+        replace_existing_dotfiles: true
+        backup_existing_dotfiles: true
+
+    - name: Check replaced guarded link
+      ansible.builtin.stat:
+        path: "{{ guarded_link_unmanaged_dest }}"
+        follow: false
+      register: guarded_link_replaced_stat
+
+    - name: Read replaced guarded link target
+      ansible.builtin.command:
+        argv:
+          - readlink
+          - "{{ guarded_link_unmanaged_dest }}"
+      changed_when: false
+      register: guarded_link_replaced_target
+
+    - name: Find guarded link backup
+      ansible.builtin.find:
+        paths: "{{ guarded_link_test_root }}"
+        patterns: "unmanaged.backup.*"
+      register: guarded_link_backups
+
+    - name: Assert explicit replacement created link and backup
+      ansible.builtin.assert:
+        that:
+          - guarded_link_replaced_stat.stat.islnk
+          - guarded_link_replaced_target.stdout == guarded_link_source
+          - guarded_link_backups.matched == 1
+
+    - name: Remove guarded link test directory
+      ansible.builtin.file:
+        path: "{{ guarded_link_test_root }}"
+        state: absent
