@@ -80,6 +80,19 @@
         checksum: "sha256:{{ nvm_install_checksum }}"
         mode: "0755"
 
+    - name: Read installed nvm version # noqa command-instead-of-module
+      become: false
+      shell: |
+        if [ -s "{{ ansible_env.HOME }}/.nvm/nvm.sh" ]; then
+          . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+          nvm --version
+        fi
+      args:
+        chdir: "{{ ansible_env.HOME }}"
+        executable: /bin/bash
+      register: nvm_installed_version
+      changed_when: false
+
     - name: Run nvm installer
       become: false
       command: /bin/bash "{{ inventory_dir }}/tarballs/nvm-install-{{ nvm_version }}.sh"
@@ -87,19 +100,30 @@
         PROFILE: /dev/null
       args:
         chdir: "{{ ansible_env.HOME }}"
-        creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+      when: nvm_installed_version.stdout != nvm_version
+      changed_when: true
 
     - name: Install Node.js # noqa command-instead-of-module
       shell: |
-        . {{ ansible_env.HOME }}/.nvm/nvm.sh
+        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        changed=0
         if ! nvm version {{ node_major_version }} >/dev/null 2>&1; then
           nvm install {{ node_major_version }}
+          changed=1
+        fi
+        default_version="$(nvm version default 2>/dev/null || true)"
+        if [[ "${default_version}" != v{{ node_major_version }}.* ]]; then
+          nvm alias default {{ node_major_version }} >/dev/null
+          changed=1
+        fi
+        if [ "${changed}" -eq 1 ]; then
+          echo "__node_changed__"
         fi
       args:
         chdir: "{{ ansible_env.HOME }}"
         executable: /bin/bash
       register: node_install
-      changed_when: node_install.stdout | length > 0
+      changed_when: "'__node_changed__' in node_install.stdout"
 
     - name: Enable nvm bashrc snippet
       file:

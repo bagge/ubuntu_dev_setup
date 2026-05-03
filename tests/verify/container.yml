@@ -92,12 +92,12 @@
         - python3-psutil
         - ranger
 
-    - name: Read git editor config
+    - name: Read git editor config # noqa command-instead-of-module
       ansible.builtin.command: git config --global core.editor
       changed_when: false
       register: git_editor
 
-    - name: Read git excludesfile config
+    - name: Read git excludesfile config # noqa command-instead-of-module
       ansible.builtin.command: git config --global core.excludesfile
       changed_when: false
       register: git_excludesfile
@@ -107,6 +107,40 @@
         that:
           - git_editor.stdout == "nvim"
           - git_excludesfile.stdout == ansible_env.HOME + "/.gitignore"
+
+    - name: Read nvm version # noqa command-instead-of-module
+      ansible.builtin.shell: |
+        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        nvm --version
+      args:
+        executable: /bin/bash
+      changed_when: false
+      register: nvm_version_result
+
+    - name: Read Node.js version # noqa command-instead-of-module
+      ansible.builtin.shell: |
+        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        node --version
+      args:
+        executable: /bin/bash
+      changed_when: false
+      register: node_version_result
+
+    - name: Read default Node.js version # noqa command-instead-of-module
+      ansible.builtin.shell: |
+        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        nvm version default
+      args:
+        executable: /bin/bash
+      changed_when: false
+      register: default_node_version
+
+    - name: Assert nvm and Node.js versions
+      ansible.builtin.assert:
+        that:
+          - nvm_version_result.stdout == nvm_version
+          - node_version_result.stdout is match("^v" + (node_major_version | string) + "\\.")
+          - default_node_version.stdout is match("^v" + (node_major_version | string) + "\\.")
 
     - name: Read global gitignore
       ansible.builtin.slurp:

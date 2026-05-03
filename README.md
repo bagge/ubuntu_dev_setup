@@ -110,6 +110,10 @@ vendor download page does not provide a stable version API, but the declared
 package URL is still pinned by checksum. Homebrew formulae and casks are not
 pinned here; Homebrew resolves those versions during installation.
 
+nvm is installed from the pinned `nvm_version` installer script after verifying
+`nvm_install_checksum`. The default Node.js version is controlled by
+`node_major_version`.
+
 ## Transfer bundle
 
 Create a transfer archive from selected local dotfiles, credentials, SSH
