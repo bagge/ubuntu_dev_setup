@@ -25,6 +25,21 @@ $ ansible-playbook setup.yml --extra-vars install_docker=false
 $ ansible-playbook setup.yml --extra-vars "install_docker=false install_google_chrome=false install_omnissa_horizon=false"
 ```
 
+Dotfile links are guarded by default. If an unmanaged target such as `.bashrc`
+already exists, the playbook fails instead of replacing it. To allow replacement
+after reviewing the file, run:
+
+```bash
+$ ansible-playbook setup.yml --extra-vars replace_existing_dotfiles=true
+```
+
+Replaced files are backed up as `<path>.backup.<timestamp>` by default. Disable
+that backup with:
+
+```bash
+$ ansible-playbook setup.yml --extra-vars "replace_existing_dotfiles=true backup_existing_dotfiles=false"
+```
+
 Supported platforms:
 - Ubuntu on amd64
 - macOS on Apple Silicon

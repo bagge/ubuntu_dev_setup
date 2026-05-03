@@ -32,7 +32,7 @@ chown -R devtester:devtester /workspace
 
 export ANSIBLE_CONFIG=/workspace/tests/ansible.cfg
 export ANSIBLE_FORCE_COLOR=0
-export TEST_EXTRA_VARS="test_mode=true run_gnome_customization=false install_docker=false install_google_chrome=false install_omnissa_horizon=false install_nvim_tools=false"
+export TEST_EXTRA_VARS="test_mode=true run_gnome_customization=false install_docker=false install_google_chrome=false install_omnissa_horizon=false install_nvim_tools=false replace_existing_dotfiles=true"
 
 cd /workspace
 
@@ -46,6 +46,7 @@ sudo -H -u devtester env \
     ansible-galaxy collection install -r requirements.yml
     ansible-playbook setup.yml --syntax-check --extra-vars "${TEST_EXTRA_VARS}"
     ansible-playbook setup.yml --extra-vars "${TEST_EXTRA_VARS}"
+    ansible-playbook tests/verify/guarded-links.yml
     ansible-playbook tests/verify/container.yml --extra-vars "${TEST_EXTRA_VARS}"
     ansible-playbook setup.yml --extra-vars "${TEST_EXTRA_VARS}" | tee /tmp/ansible-second-run.log
     python3 tests/assert_ansible_recap.py /tmp/ansible-second-run.log --changed 0 --failed 0

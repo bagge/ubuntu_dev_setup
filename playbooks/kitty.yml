@@ -100,10 +100,10 @@
         mode: "0755"
 
     - name: Install kitty configuration
-      file:
-        src: "{{ inventory_dir }}/kitty.conf"
-        dest: "{{ ansible_env.HOME }}/.config/kitty/kitty.conf"
-        state: link
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/kitty.conf"
+        guarded_link_dest: "{{ ansible_env.HOME }}/.config/kitty/kitty.conf"
 
     - name: Link kitty installation on Ubuntu
       file:
@@ -144,10 +144,10 @@
         dest: "{{ inventory_dir }}/repos/kitty-themes"
 
     - name: Link kitty theme
-      file:
-        src: "{{ inventory_dir }}/repos/kitty-themes/themes/Dracula.conf"
-        dest: "{{ ansible_env.HOME }}/.config/kitty/theme.conf"
-        state: link
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/repos/kitty-themes/themes/Dracula.conf"
+        guarded_link_dest: "{{ ansible_env.HOME }}/.config/kitty/theme.conf"
 
     - name: Clone kitty-grab
       git:
@@ -155,7 +155,7 @@
         dest: "{{ inventory_dir }}/repos/kitty_grab"
 
     - name: Link kitty-grab conf
-      file:
-        src: "{{ inventory_dir }}/repos/kitty_grab/grab-vim.conf.example"
-        dest: "{{ ansible_env.HOME }}/.config/kitty/grab.conf"
-        state: link
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/repos/kitty_grab/grab-vim.conf.example"
+        guarded_link_dest: "{{ ansible_env.HOME }}/.config/kitty/grab.conf"

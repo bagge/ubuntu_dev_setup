@@ -27,7 +27,7 @@
         mode: "0755"
 
     - name: Link ranger config
-      file:
-        src: "{{ inventory_dir }}/ranger.conf"
-        dest: "{{ ansible_env.HOME }}/.config/ranger/rc.conf"
-        state: link
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/ranger.conf"
+        guarded_link_dest: "{{ ansible_env.HOME }}/.config/ranger/rc.conf"

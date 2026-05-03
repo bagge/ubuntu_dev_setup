@@ -41,10 +41,10 @@
         dest: "{{ inventory_dir }}/repos/nvim-config"
 
     - name: Link nvim config
-      file:
-        src: "{{ inventory_dir }}/repos/nvim-config"
-        dest: "{{ ansible_env.HOME }}/.config/nvim"
-        state: link
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/repos/nvim-config"
+        guarded_link_dest: "{{ ansible_env.HOME }}/.config/nvim"
 
     - name: Install packages used by nvim
       become: true
