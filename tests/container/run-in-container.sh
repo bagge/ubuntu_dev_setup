@@ -32,7 +32,7 @@ chown -R devtester:devtester /workspace
 
 export ANSIBLE_CONFIG=/workspace/tests/ansible.cfg
 export ANSIBLE_FORCE_COLOR=0
-export TEST_EXTRA_VARS="test_mode=true run_gnome_customization=false install_docker=false install_proprietary_extras=false install_nvim_tools=false"
+export TEST_EXTRA_VARS="test_mode=true run_gnome_customization=false install_docker=false install_google_chrome=false install_omnissa_horizon=false install_nvim_tools=false"
 
 cd /workspace
 

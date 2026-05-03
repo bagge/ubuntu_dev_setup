@@ -12,6 +12,9 @@ horizon_url: https://download3.omnissa.com/software/CART25FQ2_LIN64_DEBPKG_2406
 homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 homebrew_prefix: /opt/homebrew
 homebrew_update: false
+install_docker: true
+install_google_chrome: true
+install_omnissa_horizon: true
 kitty_version: 0.45.0
 macos_set_login_shell: false
 mdcat_version: 2.7.1
