@@ -5,6 +5,26 @@
     follow: false
   register: guarded_link_dest_stat
 
+- name: Read guarded link target
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - "{{ guarded_link_dest }}"
+  changed_when: false
+  register: guarded_link_target
+  when:
+    - guarded_link_dest_stat.stat.exists
+    - guarded_link_dest_stat.stat.islnk | default(false)
+
+- name: Determine whether guarded link destination is managed
+  ansible.builtin.set_fact:
+    guarded_link_dest_is_managed: >-
+      {{
+        guarded_link_dest_stat.stat.exists and
+        (guarded_link_dest_stat.stat.islnk | default(false)) and
+        (guarded_link_target.stdout | default('')) == guarded_link_src
+      }}
+
 - name: Fail when guarded link destination is unmanaged
   ansible.builtin.fail:
     msg: >-
@@ -12,8 +32,7 @@
       manually or rerun with replace_existing_dotfiles=true.
   when:
     - guarded_link_dest_stat.stat.exists
-    - not (guarded_link_dest_stat.stat.islnk | default(false) and
-           guarded_link_dest_stat.stat.lnk_source == guarded_link_src)
+    - not guarded_link_dest_is_managed | bool
     - not replace_existing_dotfiles | bool
 
 - name: Back up unmanaged guarded link destination
@@ -25,8 +44,7 @@
   changed_when: true
   when:
     - guarded_link_dest_stat.stat.exists
-    - not (guarded_link_dest_stat.stat.islnk | default(false) and
-           guarded_link_dest_stat.stat.lnk_source == guarded_link_src)
+    - not guarded_link_dest_is_managed | bool
     - replace_existing_dotfiles | bool
     - backup_existing_dotfiles | bool
 
@@ -36,8 +54,7 @@
     state: absent
   when:
     - guarded_link_dest_stat.stat.exists
-    - not (guarded_link_dest_stat.stat.islnk | default(false) and
-           guarded_link_dest_stat.stat.lnk_source == guarded_link_src)
+    - not guarded_link_dest_is_managed | bool
     - replace_existing_dotfiles | bool
     - not backup_existing_dotfiles | bool
 
