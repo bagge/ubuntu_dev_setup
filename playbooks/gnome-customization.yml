@@ -5,6 +5,32 @@
   vars:
     run_desktop_customization: "{{ run_gnome_customization | default(true) }}"
   tasks:
+    - name: Detect usable Ubuntu GNOME session
+      ansible.builtin.set_fact:
+        ubuntu_gnome_customization_available: >-
+          {{
+            dev_setup_platform == 'ubuntu'
+            and run_desktop_customization | bool
+            and (
+              'GNOME' in ansible_env.XDG_CURRENT_DESKTOP | default('')
+              or 'gnome' in ansible_env.XDG_SESSION_DESKTOP | default('') | lower
+              or 'gnome' in ansible_env.DESKTOP_SESSION | default('') | lower
+            )
+            and ansible_env.DISPLAY | default('') | length > 0
+            and ansible_env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
+          }}
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Skip Ubuntu GNOME customization outside a usable GNOME session
+      ansible.builtin.debug:
+        msg: >-
+          Skipping Ubuntu GNOME customization because no usable graphical GNOME
+          session was detected.
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - run_desktop_customization | bool
+        - not ubuntu_gnome_customization_available | default(false) | bool
+
     - name: Read enabled extensions
       community.general.dconf:
         key: /org/gnome/shell/enabled-extensions
@@ -12,7 +38,7 @@
       register: enabled_extensions
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     # Next task requires killall -SIGQUIT gnome-shell afterwards in order for the
     # extension to be found. Right now the next task will just fail but maybe some
@@ -24,7 +50,7 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Enable workspace indicator
       command:
@@ -34,7 +60,7 @@
       failed_when: "enabled_extensions.value != None and enable_workspace_indicator.rc != 0"
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Configure switch to workspace left
       community.general.dconf:
@@ -43,7 +69,7 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Configure switch to workspace right
       community.general.dconf:
@@ -52,7 +78,7 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Configure move to workspace left
       community.general.dconf:
@@ -61,7 +87,7 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Configure move to workspace right
       community.general.dconf:
@@ -70,7 +96,7 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Configure caps-lock to be escape
       community.general.dconf:
@@ -79,7 +105,7 @@
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Set dark mode
       command: gsettings set org.gnome.desktop.interface color-scheme prefer-dark
@@ -87,7 +113,7 @@
       tags: gnome-appearance
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | bool
+        - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Set dark mode on macOS
       community.general.osx_defaults:
