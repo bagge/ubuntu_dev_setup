@@ -86,12 +86,28 @@
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 
+    - name: Detect usable Ubuntu GNOME session for default terminal
+      ansible.builtin.set_fact:
+        kitty_ubuntu_gnome_customization_available: >-
+          {{
+            dev_setup_platform == 'ubuntu'
+            and run_desktop_customization | default(run_gnome_customization | default(true)) | bool
+            and (
+              'GNOME' in ansible_env.XDG_CURRENT_DESKTOP | default('')
+              or 'gnome' in ansible_env.XDG_SESSION_DESKTOP | default('') | lower
+              or 'gnome' in ansible_env.DESKTOP_SESSION | default('') | lower
+            )
+            and ansible_env.DISPLAY | default('') | length > 0
+            and ansible_env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
+          }}
+      when: dev_setup_platform == 'ubuntu'
+
     - name: Configure gnome to use kitty as default terminal
       command: gsettings set org.gnome.desktop.default-applications.terminal exec "{{ ansible_env.HOME }}/.local/bin/kitty"
       changed_when: false
       when:
         - dev_setup_platform == 'ubuntu'
-        - run_desktop_customization | default(run_gnome_customization | default(true)) | bool
+        - kitty_ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Create kitty config directory
       file:

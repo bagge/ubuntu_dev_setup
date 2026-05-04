@@ -70,6 +70,8 @@ second time, and fails unless the second run reports `changed=0` and `failed=0`.
 
 Desktop-specific GNOME behavior should be tested in a disposable Ubuntu Desktop
 VM using `tests/manual/gnome-vm.md`.
+On headless or non-GNOME Ubuntu hosts, GNOME-only customization tasks are
+skipped automatically with a clear message.
 
 Run the macOS Apple Silicon integration test directly on a macOS host:
 
