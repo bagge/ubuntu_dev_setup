@@ -21,7 +21,7 @@
   tasks:
     - name: Install python3-psutil (needed by dconf module)
       become: true
-      apt:
+      ansible.builtin.apt:
         name: python3-psutil
         update_cache: true
         state: present
@@ -36,7 +36,7 @@
       when: dev_setup_platform == 'macos'
 
     - name: Create tarballs directory
-      file:
+      ansible.builtin.file:
         path: "{{ inventory_dir }}/tarballs"
         state: directory
         mode: "0755"

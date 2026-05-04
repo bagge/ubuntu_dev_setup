@@ -7,7 +7,7 @@
   tasks:
     - name: Install ranger on Ubuntu
       become: true
-      apt:
+      ansible.builtin.apt:
         name: ranger
         state: present
       when: dev_setup_platform == 'ubuntu'
@@ -21,7 +21,7 @@
       when: dev_setup_platform == 'macos'
 
     - name: Create ranger config directory
-      file:
+      ansible.builtin.file:
         path: "{{ ansible_env.HOME }}/.config/ranger"
         state: directory
         mode: "0755"

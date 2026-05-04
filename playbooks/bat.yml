@@ -9,7 +9,7 @@
   tasks:
     - name: Install bat on Ubuntu
       become: true
-      apt:
+      ansible.builtin.apt:
         name: bat
         state: present
       when: dev_setup_platform == 'ubuntu'
@@ -23,13 +23,13 @@
       when: dev_setup_platform == 'macos'
 
     - name: Create local bin directory
-      file:
+      ansible.builtin.file:
         dest: "{{ ansible_env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
 
     - name: Symlink bat
-      file:
+      ansible.builtin.file:
         src: "{{ bat_binary }}"
         dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
         state: link

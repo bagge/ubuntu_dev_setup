@@ -4,24 +4,24 @@
   tags: fzf
   tasks:
     - name: Clone fzf
-      git:
+      ansible.builtin.git:
         repo: https://github.com/junegunn/fzf
         dest: "{{ inventory_dir }}/repos/fzf"
         version: "v{{ fzf_version }}"
 
     - name: Build fzf
-      command:
+      ansible.builtin.command:
         cmd: "./install --no-update-rc"
         chdir: "{{ inventory_dir }}/repos/fzf"
         creates: "{{ inventory_dir }}/repos/fzf/bin/fzf"
 
     - name: Clone fzf-git
-      git:
+      ansible.builtin.git:
         repo: https://github.com/junegunn/fzf-git.sh
         dest: "{{ inventory_dir }}/repos/fzf-git.sh"
 
     - name: Enable fzf bashrc snippet
-      file:
+      ansible.builtin.file:
         src: "{{ inventory_dir }}/bashrc.d/{{ item }}"
         dest: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
         state: link

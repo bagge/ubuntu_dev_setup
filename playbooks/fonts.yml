@@ -13,14 +13,14 @@
       when: dev_setup_platform == 'macos'
 
     - name: Create font directory on Ubuntu
-      file:
+      ansible.builtin.file:
         path: "{{ ansible_env.HOME }}/.local/share/fonts"
         state: directory
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Download fonts on Ubuntu
-      get_url:
+      ansible.builtin.get_url:
         url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v{{ nerd_fonts_version }}/Hack.zip"
         dest: "{{ inventory_dir }}/tarballs/Hack.zip"
         checksum: "sha256:{{ nerd_fonts_hack_checksum }}"
@@ -28,7 +28,7 @@
       when: dev_setup_platform == 'ubuntu'
 
     - name: Extract fonts on Ubuntu
-      unarchive:
+      ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/Hack.zip"
         dest: "{{ ansible_env.HOME }}/.local/share/fonts"
         remote_src: true
@@ -36,6 +36,6 @@
       when: dev_setup_platform == 'ubuntu'
 
     - name: Update font cache on Ubuntu
-      command: fc-cache -f -v
+      ansible.builtin.command: fc-cache -f -v
       changed_when: false
       when: dev_setup_platform == 'ubuntu'

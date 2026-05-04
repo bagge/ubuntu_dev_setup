@@ -14,7 +14,7 @@
       when: dev_setup_platform == 'macos'
 
     - name: Fetch glow on Ubuntu
-      get_url:
+      ansible.builtin.get_url:
         url: "https://github.com/charmbracelet/glow/releases/download/v{{ glow_version }}/glow_{{ glow_version }}_{{ dev_setup_artifacts.glow_deb_arch }}.deb"
         dest: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_{{ dev_setup_artifacts.glow_deb_arch }}.deb"
         checksum: "sha256:{{ glow_ubuntu_checksum }}"
@@ -23,7 +23,7 @@
 
     - name: Install glow on Ubuntu
       become: true
-      apt:
+      ansible.builtin.apt:
         deb: "{{ inventory_dir }}/tarballs/glow_{{ glow_version }}_{{ dev_setup_artifacts.glow_deb_arch }}.deb"
         state: present
       when: dev_setup_platform == 'ubuntu'

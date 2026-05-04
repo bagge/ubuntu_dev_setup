@@ -45,7 +45,7 @@
     # sort of message could be printed to the user to inform of this.
     - name: Install gnome extensions app
       become: true
-      package:
+      ansible.builtin.package:
         name: gnome-shell-extensions
         state: present
       when:
@@ -53,7 +53,7 @@
         - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Enable workspace indicator
-      command:
+      ansible.builtin.command:
         cmd: gnome-extensions enable workspace-indicator@gnome-shell-extensions.gcampax.github.com
       register: enable_workspace_indicator
       changed_when: "enabled_extensions.value != None and 'workspace-indicator' not in enabled_extensions.value"
@@ -108,7 +108,7 @@
         - ubuntu_gnome_customization_available | default(false) | bool
 
     - name: Set dark mode
-      command: gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+      ansible.builtin.command: gsettings set org.gnome.desktop.interface color-scheme prefer-dark
       changed_when: false
       tags: gnome-appearance
       when:
@@ -127,7 +127,7 @@
         - run_desktop_customization | bool
 
     - name: Create LaunchAgents directory on macOS
-      file:
+      ansible.builtin.file:
         path: "{{ ansible_env.HOME }}/Library/LaunchAgents"
         state: directory
         mode: "0755"
@@ -136,7 +136,7 @@
         - run_desktop_customization | bool
 
     - name: Install Caps Lock to Escape LaunchAgent on macOS
-      copy:
+      ansible.builtin.copy:
         dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
         mode: "0644"
         content: |
@@ -163,7 +163,7 @@
         - run_desktop_customization | bool
 
     - name: Load Caps Lock to Escape LaunchAgent on macOS
-      command: launchctl bootstrap "gui/{{ ansible_user_uid }}" "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
+      ansible.builtin.command: launchctl bootstrap "gui/{{ ansible_user_uid }}" "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
       register: caps_lock_launchctl
       changed_when: caps_lock_launchctl.rc == 0
       failed_when:
