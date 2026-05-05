@@ -1,0 +1,34 @@
+---
+- name: Install GitHub CLI
+  hosts: all
+  tags: github-cli
+  vars:
+    github_cli_asset: "gh_{{ github_cli_version }}_{{ dev_setup_artifacts.github_cli_target }}.{{ dev_setup_artifacts.github_cli_archive_ext }}"
+    github_cli_archive_dir: "gh_{{ github_cli_version }}_{{ dev_setup_artifacts.github_cli_target }}"
+    github_cli_checksum: "{{ github_cli_linux_checksum if dev_setup_platform == 'ubuntu' else github_cli_macos_checksum }}"
+  tasks:
+    - name: Create local bin directory
+      ansible.builtin.file:
+        dest: "{{ ansible_env.HOME }}/.local/bin"
+        state: directory
+        mode: "0755"
+
+    - name: Download GitHub CLI release archive
+      ansible.builtin.get_url:
+        url: "https://github.com/cli/cli/releases/download/v{{ github_cli_version }}/{{ github_cli_asset }}"
+        dest: "{{ inventory_dir }}/tarballs/{{ github_cli_asset }}"
+        checksum: "sha256:{{ github_cli_checksum }}"
+        mode: "0644"
+
+    - name: Extract GitHub CLI release archive
+      ansible.builtin.unarchive:
+        src: "{{ inventory_dir }}/tarballs/{{ github_cli_asset }}"
+        dest: "{{ inventory_dir }}/tarballs"
+        remote_src: true
+        creates: "{{ inventory_dir }}/tarballs/{{ github_cli_archive_dir }}/bin/gh"
+
+    - name: Link GitHub CLI
+      ansible.builtin.file:
+        src: "{{ inventory_dir }}/tarballs/{{ github_cli_archive_dir }}/bin/gh"
+        dest: "{{ ansible_env.HOME }}/.local/bin/gh"
+        state: link

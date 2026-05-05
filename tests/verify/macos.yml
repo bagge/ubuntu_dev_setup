@@ -20,6 +20,7 @@
       - buildifier
       - buildozer
       - cat
+      - gh
       - git-toprepo
       - kitten
       - kitty
@@ -128,6 +129,16 @@
       ansible.builtin.command: "{{ homebrew_prefix }}/bin/brew list --cask {{ item }}"
       changed_when: false
       loop: "{{ expected_casks }}"
+
+    - name: Read GitHub CLI version # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/gh --version"
+      changed_when: false
+      register: github_cli_version_result
+
+    - name: Assert GitHub CLI version
+      ansible.builtin.assert:
+        that:
+          - github_cli_version_result.stdout_lines[0] is match("^gh version " + github_cli_version + "( |$)")
 
     - name: Read git editor config # noqa command-instead-of-module
       ansible.builtin.command: git config --global core.editor
