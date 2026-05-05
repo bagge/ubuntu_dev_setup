@@ -35,7 +35,7 @@
         dest: "{{ ansible_env.HOME }}/.local/bin/nvim"
         state: link
 
-    - name: Clone nvim-config
+    - name: Clone nvim-config # noqa latest[git]
       ansible.builtin.git:
         repo: https://github.com/bagge/nvim-config.git
         dest: "{{ inventory_dir }}/repos/nvim-config"

@@ -19,6 +19,7 @@
       ansible.builtin.git:
         repo: https://github.com/junegunn/fzf-git.sh
         dest: "{{ inventory_dir }}/repos/fzf-git.sh"
+        version: "{{ fzf_git_commit }}"
 
     - name: Enable fzf bashrc snippet
       ansible.builtin.file:

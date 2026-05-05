@@ -1,8 +1,4 @@
 ---
 kinds:
   - playbook: "**/*.{yml,yaml}"
-
-skip_list:
-  # Some personal configuration/theme repositories intentionally track latest.
-  - git-latest
 ...

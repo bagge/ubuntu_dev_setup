@@ -13,7 +13,7 @@
       ansible.builtin.git:
         repo: https://github.com/romkatv/gitstatus.git
         dest: "{{ inventory_dir }}/repos/gitstatus"
-        depth: 1
+        version: "{{ gitstatus_commit }}"
 
     - name: Create enabled directory
       ansible.builtin.file:

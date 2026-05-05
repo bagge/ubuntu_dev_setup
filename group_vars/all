@@ -4,8 +4,10 @@ bazel_buildtools_version: 8.2.1
 bazelisk_version: 1.27.0
 chrome_deb: google-chrome-stable_current_amd64.deb
 fzf_version: 0.67.0
+fzf_git_commit: 0f0488331a060cf45aaecb6705a2cf394fb20293
 glow_version: 2.1.1
 golang_version: 1.25.5
+gitstatus_commit: 075baf6ecb19f58b09c9562f33c20b842e870961
 nerd_fonts_version: 3.2.1
 horizon_deb: VMware-Horizon-Client-2406-8.13.0-9995429239.x64.deb
 horizon_url: https://download3.omnissa.com/software/CART25FQ2_LIN64_DEBPKG_2406
@@ -16,6 +18,8 @@ backup_existing_dotfiles: true
 install_docker: true
 install_google_chrome: true
 install_omnissa_horizon: true
+kitty_grab_commit: 969e363295b48f62fdcbf29987c77ac222109c41
+kitty_themes_commit: 61ce981ce900971671a0baefe2fff90bf5e6fcff
 kitty_version: 0.45.0
 macos_set_login_shell: false
 mdcat_version: 2.7.1
