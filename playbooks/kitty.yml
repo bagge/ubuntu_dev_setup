@@ -158,6 +158,7 @@
       ansible.builtin.git:
         repo: https://github.com/kovidgoyal/kitty-themes.git
         dest: "{{ inventory_dir }}/repos/kitty-themes"
+        version: "{{ kitty_themes_commit }}"
 
     - name: Link kitty theme
       ansible.builtin.include_tasks: tasks/guarded-link.yml
@@ -169,6 +170,7 @@
       ansible.builtin.git:
         repo: https://github.com/yurikhan/kitty_grab.git
         dest: "{{ inventory_dir }}/repos/kitty_grab"
+        version: "{{ kitty_grab_commit }}"
 
     - name: Link kitty-grab conf
       ansible.builtin.include_tasks: tasks/guarded-link.yml

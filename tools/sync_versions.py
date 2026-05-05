@@ -67,6 +67,12 @@ class Source:
 SOURCES: tuple[Source, ...] = (
     Source("Bash-it", "bash_it_version", "github", "Bash-it/bash-it", "v"),
     Source(
+        "gitstatus",
+        "gitstatus_commit",
+        "github_default_branch",
+        "romkatv/gitstatus",
+    ),
+    Source(
         "Bazel buildtools",
         "bazel_buildtools_version",
         "github",
@@ -121,6 +127,12 @@ SOURCES: tuple[Source, ...] = (
     ),
     Source("fzf", "fzf_version", "github", "junegunn/fzf", "v"),
     Source(
+        "fzf-git.sh",
+        "fzf_git_commit",
+        "github_default_branch",
+        "junegunn/fzf-git.sh",
+    ),
+    Source(
         "glow",
         "glow_version",
         "github",
@@ -171,6 +183,18 @@ SOURCES: tuple[Source, ...] = (
                 "kitty_linux_checksum",
             ),
         ),
+    ),
+    Source(
+        "kitty-themes",
+        "kitty_themes_commit",
+        "github_default_branch",
+        "kovidgoyal/kitty-themes",
+    ),
+    Source(
+        "kitty-grab",
+        "kitty_grab_commit",
+        "github_default_branch",
+        "yurikhan/kitty_grab",
     ),
     Source(
         "mdcat",
@@ -483,6 +507,24 @@ def github_release(source: Source) -> tuple[str, str]:
     return version, note
 
 
+def github_default_branch_commit(source: Source) -> tuple[str, str]:
+    if source.repo is None:
+        raise VersionSyncError(f"{source.name} is missing a GitHub repo")
+
+    base = f"https://api.github.com/repos/{source.repo}"
+    metadata = fetch_json(base)
+    default_branch = metadata.get("default_branch")
+    if not default_branch:
+        raise VersionSyncError(f"{source.name} repository has no default_branch")
+
+    branch_ref = urllib.parse.quote(default_branch, safe="")
+    commit = fetch_json(f"{base}/commits/{branch_ref}")
+    sha = commit.get("sha")
+    if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise VersionSyncError(f"{source.name} default branch commit has no full SHA")
+    return sha, f"default branch: {default_branch}"
+
+
 def go_latest(_: Source) -> tuple[str, str]:
     releases = fetch_json("https://go.dev/dl/?mode=json")
     for release in releases:
@@ -588,6 +630,7 @@ def node_lts_major(_: Source) -> tuple[str, str]:
 def resolve(source: Source) -> tuple[str | None, str]:
     providers: dict[str, Callable[[Source], tuple[str, str]]] = {
         "github": github_release,
+        "github_default_branch": github_default_branch_commit,
         "go": go_latest,
         "node_lts_major": node_lts_major,
     }

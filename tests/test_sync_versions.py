@@ -164,6 +164,61 @@ class SyncVersionsTest(unittest.TestCase):
             {"tool_linux_checksum": "abc123"},
         )
 
+    def test_github_default_branch_commit_uses_default_branch_sha(self):
+        source = sync_versions.Source(
+            "repo",
+            "repo_commit",
+            "github_default_branch",
+            "owner/repo",
+        )
+
+        def fetch_json(url):
+            responses = {
+                "https://api.github.com/repos/owner/repo": {
+                    "default_branch": "main",
+                },
+                "https://api.github.com/repos/owner/repo/commits/main": {
+                    "sha": "a" * 40,
+                },
+            }
+            return responses[url]
+
+        with mock.patch.object(sync_versions, "fetch_json", side_effect=fetch_json):
+            self.assertEqual(
+                sync_versions.github_default_branch_commit(source),
+                ("a" * 40, "default branch: main"),
+            )
+
+    def test_collect_results_updates_github_default_branch_commit(self):
+        source = sync_versions.Source(
+            "repo",
+            "repo_commit",
+            "github_default_branch",
+            "owner/repo",
+        )
+
+        with (
+            mock.patch.object(sync_versions, "SOURCES", (source,)),
+            mock.patch.object(
+                sync_versions,
+                "github_default_branch_commit",
+                return_value=("b" * 40, "default branch: main"),
+            ),
+        ):
+            self.assertEqual(
+                sync_versions.collect_results({"repo_commit": "a" * 40}),
+                [
+                    sync_versions.Result(
+                        source,
+                        "a" * 40,
+                        "b" * 40,
+                        "update",
+                        "default branch: main",
+                        {"repo_commit": "b" * 40},
+                    )
+                ],
+            )
+
     def test_direct_checksums_hashes_url_bytes(self):
         source = sync_versions.Source(
             "script",
