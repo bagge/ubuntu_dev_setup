@@ -19,6 +19,7 @@
       - buildifier
       - buildozer
       - cat
+      - gh
       - git-toprepo
       - kitten
       - kitty
@@ -91,6 +92,16 @@
         - python3-pip
         - python3-psutil
         - ranger
+
+    - name: Read GitHub CLI version # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/gh --version"
+      changed_when: false
+      register: github_cli_version_result
+
+    - name: Assert GitHub CLI version
+      ansible.builtin.assert:
+        that:
+          - github_cli_version_result.stdout_lines[0] is match("^gh version " + github_cli_version + "( |$)")
 
     - name: Read git editor config # noqa command-instead-of-module
       ansible.builtin.command: git config --global core.editor

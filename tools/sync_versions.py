@@ -28,6 +28,8 @@ ARTIFACTS = {
         "deb_arch": "amd64",
         "glow_deb_arch": "amd64",
         "golang_target": "linux-amd64",
+        "github_cli_archive_ext": "tar.gz",
+        "github_cli_target": "linux_amd64",
         "kitty_target": "x86_64",
         "mdcat_target": "x86_64-unknown-linux-gnu",
         "nvim_archive_name": "nvim-linux-x86_64",
@@ -37,6 +39,8 @@ ARTIFACTS = {
         "bazel_buildtools_target": "darwin-arm64",
         "bazelisk_asset": "bazelisk-darwin-arm64",
         "golang_target": "darwin-arm64",
+        "github_cli_archive_ext": "zip",
+        "github_cli_target": "macOS_arm64",
         "mdcat_target": "aarch64-apple-darwin",
         "nvim_archive_name": "nvim-macos-arm64",
     },
@@ -158,6 +162,27 @@ SOURCES: tuple[Source, ...] = (
             ChecksumAsset(
                 f"go{{version}}.{MACOS['golang_target']}.tar.gz",
                 "golang_macos_checksum",
+            ),
+        ),
+    ),
+    Source(
+        "GitHub CLI",
+        "github_cli_version",
+        "github",
+        "cli/cli",
+        "v",
+        (
+            f"gh_{{version}}_{UBUNTU['github_cli_target']}.{UBUNTU['github_cli_archive_ext']}",
+            f"gh_{{version}}_{MACOS['github_cli_target']}.{MACOS['github_cli_archive_ext']}",
+        ),
+        checksum_assets=(
+            ChecksumAsset(
+                f"gh_{{version}}_{UBUNTU['github_cli_target']}.{UBUNTU['github_cli_archive_ext']}",
+                "github_cli_linux_checksum",
+            ),
+            ChecksumAsset(
+                f"gh_{{version}}_{MACOS['github_cli_target']}.{MACOS['github_cli_archive_ext']}",
+                "github_cli_macos_checksum",
             ),
         ),
     ),
