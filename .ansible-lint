@@ -5,6 +5,4 @@ kinds:
 skip_list:
   # Some personal configuration/theme repositories intentionally track latest.
   - git-latest
-  # Cache/reload-style tasks will be reviewed separately before handler refactors.
-  - no-handler
 ...
