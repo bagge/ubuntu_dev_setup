@@ -7,14 +7,14 @@
     mdcat_archive: "mdcat-{{ mdcat_version }}-{{ mdcat_target }}"
   tasks:
     - name: Create local bin directory
-      file:
+      ansible.builtin.file:
         dest: "{{ ansible_env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Download mdcat
-      get_url:
+      ansible.builtin.get_url:
         url: "https://github.com/swsnr/mdcat/releases/download/mdcat-{{ mdcat_version }}/{{ mdcat_archive }}.tar.gz"
         dest: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}.tar"
         checksum: "sha256:{{ mdcat_linux_checksum }}"
@@ -22,7 +22,7 @@
       when: dev_setup_platform == 'ubuntu'
 
     - name: Extract mdcat
-      unarchive:
+      ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
@@ -30,21 +30,21 @@
       when: dev_setup_platform == 'ubuntu'
 
     - name: Link mdcat
-      file:
+      ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat"
         dest: "{{ ansible_env.HOME }}/.local/bin/mdcat"
         state: link
       when: dev_setup_platform == 'ubuntu'
 
     - name: Create local man directory
-      file:
+      ansible.builtin.file:
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1"
         state: directory
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Copy manfile
-      copy:
+      ansible.builtin.copy:
         src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat.1/mdcat.1"
         dest: "{{ ansible_env.HOME }}/.local/share/man/man1/mdcat.1"
         mode: "0644"
@@ -53,7 +53,7 @@
 
     - name: Update mandb
       become: true
-      command: mandb
+      ansible.builtin.command: mandb
       changed_when: false
       when:
         - dev_setup_platform == 'ubuntu'
