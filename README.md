@@ -98,10 +98,10 @@ To update the automatic pins and their checksums in `group_vars/all`, run:
 $ python3 tools/sync_versions.py --write
 ```
 
-The updater uses GitHub, Go, and Node.js release metadata and verifies expected
-release assets before accepting a new version. If `GITHUB_TOKEN` is set it will
-be used for GitHub API requests. For currently pinned versions, checksum-only
-refreshes can be done without changing versions:
+The updater uses GitHub, Go, Node.js, and kernel.org Git release metadata and
+verifies expected release assets before accepting a new version. If
+`GITHUB_TOKEN` is set it will be used for GitHub API requests. For currently
+pinned versions, checksum-only refreshes can be done without changing versions:
 
 ```bash
 $ python3 tools/sync_versions.py --write-current-checksums
@@ -112,6 +112,13 @@ vendor download page does not provide a stable version API, but the declared
 package URL is still pinned by checksum. Homebrew formulae and casks are not
 pinned here; Homebrew resolves those versions during installation. GitHub CLI
 is installed from pinned GitHub release archives on both Ubuntu and macOS.
+
+On Ubuntu, Git is built from the pinned kernel.org source tarball and installed
+under `~/.local/opt/git-<version>`. The active install is exposed through
+`~/.local/opt/git-current`, which is prepended to `PATH` for interactive shells.
+apt Git remains installed as a bootstrap/build dependency. To remove the
+source-built Git install, delete `~/.local/opt/git-current` and any
+`~/.local/opt/git-*` directories.
 
 nvm is installed from the pinned `nvm_version` installer script after verifying
 `nvm_install_checksum`. The default Node.js version is controlled by

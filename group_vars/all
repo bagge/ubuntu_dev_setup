@@ -7,6 +7,8 @@ fzf_version: 0.67.0
 fzf_git_commit: 0f0488331a060cf45aaecb6705a2cf394fb20293
 glow_version: 2.1.1
 golang_version: 1.25.5
+git_source_checksum: f689162364c10de79ef89aa8dbf48731eb057e34edbbd20aca510ce0154681a3
+git_version: 2.54.0
 gitstatus_commit: 075baf6ecb19f58b09c9562f33c20b842e870961
 github_cli_version: 2.92.0
 nerd_fonts_version: 3.2.1
@@ -19,6 +21,7 @@ backup_existing_dotfiles: true
 install_docker: true
 install_google_chrome: true
 install_omnissa_horizon: true
+install_source_git: true
 kitty_grab_commit: 969e363295b48f62fdcbf29987c77ac222109c41
 kitty_themes_commit: 61ce981ce900971671a0baefe2fff90bf5e6fcff
 kitty_version: 0.45.0
