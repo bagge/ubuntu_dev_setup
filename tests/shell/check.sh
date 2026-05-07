@@ -19,6 +19,7 @@ bash_files=(
     tests/container/run.sh
     tests/container/run-in-container.sh
     tests/macos/run.sh
+    tests/vm/run.sh
     tests/shell/check.sh
 )
 
@@ -28,6 +29,7 @@ done
 
 python3 -m py_compile tools/sync_versions.py
 python3 -m unittest tests/test_sync_versions.py
+bash tests/vm/run.sh --help >/dev/null
 
 bundle_test_dir="$(mktemp -d)"
 trap 'rm -rf "${bundle_test_dir}"' EXIT

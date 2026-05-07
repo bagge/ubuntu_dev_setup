@@ -69,7 +69,24 @@ playbook, verifies expected state with Ansible assertions, runs the playbook a
 second time, and fails unless the second run reports `changed=0` and `failed=0`.
 
 Desktop-specific GNOME behavior should be tested in a disposable Ubuntu Desktop
-VM using `tests/manual/gnome-vm.md`.
+VM. Create a Multipass-backed Ubuntu 24.04 GNOME VM with:
+
+```bash
+$ bash tests/vm/run.sh
+```
+
+Create a VM for another supported Ubuntu release with:
+
+```bash
+$ bash tests/vm/run.sh 22.04
+```
+
+The VM helper uses official Ubuntu Multipass images, installs the GNOME desktop
+and RDP access, copies a clean snapshot of this repository into the guest, and
+prints the login details plus the next commands to run. It intentionally does
+not mount the host checkout, so desktop test runs cannot change the local
+workstation setup or the local repository. Use `tests/manual/gnome-vm.md` for
+the manual pass/fail checklist.
 On headless or non-GNOME Ubuntu hosts, GNOME-only customization tasks are
 skipped automatically with a clear message.
 
