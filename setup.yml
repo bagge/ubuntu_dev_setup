@@ -3,6 +3,8 @@
   ansible.builtin.import_playbook: playbooks/preflight.yml
 - name: Common tasks
   ansible.builtin.import_playbook: playbooks/common.yml
+- name: Install Git from source
+  ansible.builtin.import_playbook: playbooks/git-source.yml
 - name: Install GitHub CLI
   ansible.builtin.import_playbook: playbooks/github-cli.yml
 - name: Setup bashrc

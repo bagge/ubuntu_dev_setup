@@ -1,0 +1,108 @@
+---
+- name: Install Git from source
+  hosts: all
+  tags: git-source
+  vars:
+    git_source_archive: "git-{{ git_version }}.tar.xz"
+    git_source_dir: "{{ inventory_dir }}/repos/git-{{ git_version }}"
+    git_prefix: "{{ ansible_env.HOME }}/.local/opt/git-{{ git_version }}"
+    git_current_prefix: "{{ ansible_env.HOME }}/.local/opt/git-current"
+  tasks:
+    - name: Install Git build dependencies on Ubuntu
+      become: true
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - gettext
+          - git
+          - libcurl4-openssl-dev
+          - libexpat1-dev
+          - libssl-dev
+          - perl
+          - tar
+          - xz-utils
+          - zlib1g-dev
+        state: present
+        update_cache: true
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+
+    - name: Create source and install directories on Ubuntu
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ inventory_dir }}/repos"
+        - "{{ ansible_env.HOME }}/.local/opt"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+
+    - name: Download Git source archive on Ubuntu
+      ansible.builtin.get_url:
+        url: "https://mirrors.edge.kernel.org/pub/software/scm/git/{{ git_source_archive }}"
+        dest: "{{ inventory_dir }}/tarballs/{{ git_source_archive }}"
+        checksum: "sha256:{{ git_source_checksum }}"
+        mode: "0644"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+
+    - name: Extract Git source archive on Ubuntu
+      ansible.builtin.unarchive:
+        src: "{{ inventory_dir }}/tarballs/{{ git_source_archive }}"
+        dest: "{{ inventory_dir }}/repos"
+        remote_src: true
+        creates: "{{ git_source_dir }}/Makefile"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+
+    - name: Check installed source Git version on Ubuntu
+      ansible.builtin.command: "{{ git_prefix }}/bin/git --version"
+      register: source_git_version
+      changed_when: false
+      failed_when: false
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+
+    - name: Determine whether source Git install is needed on Ubuntu
+      ansible.builtin.set_fact:
+        source_git_install_needed: "{{ source_git_version.stdout | default('') != 'git version ' + git_version }}"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+
+    - name: Build Git from source on Ubuntu
+      community.general.make:
+        chdir: "{{ git_source_dir }}"
+        target: all
+        params:
+          prefix: "{{ git_prefix }}"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+        - source_git_install_needed | bool
+
+    - name: Install Git from source on Ubuntu
+      community.general.make:
+        chdir: "{{ git_source_dir }}"
+        target: install
+        params:
+          prefix: "{{ git_prefix }}"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+        - source_git_install_needed | bool
+
+    - name: Link active source Git on Ubuntu
+      ansible.builtin.file:
+        src: "{{ git_prefix }}"
+        dest: "{{ git_current_prefix }}"
+        state: link
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool

@@ -306,6 +306,53 @@ class SyncVersionsTest(unittest.TestCase):
             },
         )
 
+    def test_kernel_git_checksums_from_text_uses_stable_tar_xz_entries(self):
+        text = (
+            "a" * 64
+            + "  git-2.53.0.tar.xz\n"
+            + "b" * 64
+            + "  git-2.54.0-rc1.tar.xz\n"
+            + "c" * 64
+            + "  git-2.54.0.tar.gz\n"
+            + "d" * 64
+            + "  git-2.54.0.tar.xz\n"
+        )
+
+        self.assertEqual(
+            sync_versions.kernel_git_checksums_from_text(text),
+            {
+                "2.53.0": "a" * 64,
+                "2.54.0": "d" * 64,
+            },
+        )
+
+    def test_kernel_git_latest_uses_highest_stable_version(self):
+        text = (
+            "a" * 64
+            + "  git-2.53.0.tar.xz\n"
+            + "b" * 64
+            + "  git-2.55.0-rc0.tar.xz\n"
+            + "c" * 64
+            + "  git-2.54.0.tar.xz\n"
+        )
+
+        with mock.patch.object(sync_versions, "fetch_text", return_value=text):
+            self.assertEqual(
+                sync_versions.kernel_git_latest(
+                    sync_versions.Source("Git", "git_version", "kernel_git")
+                ),
+                ("2.54.0", "kernel.org source tarball"),
+            )
+
+    def test_kernel_git_checksums_returns_source_checksum(self):
+        text = "a" * 64 + "  git-2.54.0.tar.xz\n"
+
+        with mock.patch.object(sync_versions, "fetch_text", return_value=text):
+            self.assertEqual(
+                sync_versions.kernel_git_checksums("2.54.0"),
+                {"git_source_checksum": "a" * 64},
+            )
+
     def test_node_lts_major_uses_highest_lts_major(self):
         response = [
             {"version": "v25.0.0", "lts": False},

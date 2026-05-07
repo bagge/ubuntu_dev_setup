@@ -20,6 +20,7 @@ from typing import Any, Callable
 REPO_ROOT = Path(__file__).resolve().parents[1]
 GROUP_VARS = REPO_ROOT / "group_vars" / "all"
 TIMEOUT_SECONDS = 20
+GIT_SHA256SUMS_URL = "https://mirrors.edge.kernel.org/pub/software/scm/git/sha256sums.asc"
 
 ARTIFACTS = {
     "ubuntu_amd64": {
@@ -165,6 +166,7 @@ SOURCES: tuple[Source, ...] = (
             ),
         ),
     ),
+    Source("Git", "git_version", "kernel_git"),
     Source(
         "GitHub CLI",
         "github_cli_version",
@@ -380,6 +382,12 @@ def fetch_json(url: str) -> Any:
         return json.loads(response.read().decode("utf-8"))
 
 
+def fetch_text(url: str) -> str:
+    request = urllib.request.Request(url, headers=request_headers("text/plain"))
+    with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+        return response.read().decode("utf-8")
+
+
 def fetch_sha256(url: str) -> str:
     request = urllib.request.Request(
         url,
@@ -576,6 +584,38 @@ def go_release(version: str) -> dict[str, Any]:
     raise VersionSyncError(f"Go {version} was not found in release metadata")
 
 
+def version_key(version: str) -> tuple[int, int, int]:
+    parts = version.split(".")
+    if len(parts) != 3:
+        raise VersionSyncError(f"Unsupported semantic version: {version}")
+    return tuple(int(part) for part in parts)
+
+
+def kernel_git_checksums_from_text(text: str) -> dict[str, str]:
+    checksums: dict[str, str] = {}
+    for line in text.splitlines():
+        match = re.match(r"^([0-9a-f]{64})\s+git-(\d+\.\d+\.\d+)\.tar\.xz$", line)
+        if match:
+            checksums[match.group(2)] = match.group(1)
+    if not checksums:
+        raise VersionSyncError("No stable Git source checksums found")
+    return checksums
+
+
+def kernel_git_latest(_: Source) -> tuple[str, str]:
+    checksums = kernel_git_checksums_from_text(fetch_text(GIT_SHA256SUMS_URL))
+    latest = max(checksums, key=version_key)
+    return latest, "kernel.org source tarball"
+
+
+def kernel_git_checksums(version: str) -> dict[str, str]:
+    checksums = kernel_git_checksums_from_text(fetch_text(GIT_SHA256SUMS_URL))
+    checksum = checksums.get(version)
+    if checksum is None:
+        raise BlockedUpdateError(f"Git {version} source checksum was not found")
+    return {"git_source_checksum": checksum}
+
+
 def go_checksums(
     source: Source,
     version: str,
@@ -632,6 +672,8 @@ def checksum_values(
         return github_asset_checksums(source, version, values)
     if source.provider == "go":
         return go_checksums(source, version, values)
+    if source.provider == "kernel_git":
+        return kernel_git_checksums(version)
     if source.provider in {"manual", "static_url"}:
         return direct_checksums(source, version, values)
     return {}
@@ -657,6 +699,7 @@ def resolve(source: Source) -> tuple[str | None, str]:
         "github": github_release,
         "github_default_branch": github_default_branch_commit,
         "go": go_latest,
+        "kernel_git": kernel_git_latest,
         "node_lts_major": node_lts_major,
     }
     if source.provider == "manual":

@@ -93,6 +93,26 @@
         - python3-psutil
         - ranger
 
+    - name: Read source Git version # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/opt/git-current/bin/git --version"
+      changed_when: false
+      register: source_git_version_result
+
+    - name: Resolve Git in interactive shell # noqa command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - bash
+          - -ic
+          - command -v git
+      changed_when: false
+      register: resolved_git_command
+
+    - name: Assert source Git version and PATH precedence
+      ansible.builtin.assert:
+        that:
+          - source_git_version_result.stdout == "git version " + git_version
+          - resolved_git_command.stdout == ansible_env.HOME + "/.local/opt/git-current/bin/git"
+
     - name: Read GitHub CLI version # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/gh --version"
       changed_when: false
