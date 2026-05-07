@@ -17,6 +17,8 @@
   ansible.builtin.import_playbook: playbooks/kitty.yml
 - name: Setup neovim
   ansible.builtin.import_playbook: playbooks/nvim.yml
+- name: Install LLM CLIs
+  ansible.builtin.import_playbook: playbooks/llm-clis.yml
 - name: Setup bash-it
   ansible.builtin.import_playbook: playbooks/bash-it.yml
 - name: Setup ranger

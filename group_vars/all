@@ -20,6 +20,7 @@ homebrew_update: false
 backup_existing_dotfiles: true
 install_docker: true
 install_google_chrome: true
+install_llm_clis: true
 install_omnissa_horizon: true
 install_source_git: true
 kitty_grab_commit: 969e363295b48f62fdcbf29987c77ac222109c41
@@ -27,7 +28,7 @@ kitty_themes_commit: 61ce981ce900971671a0baefe2fff90bf5e6fcff
 kitty_version: 0.45.0
 macos_set_login_shell: false
 mdcat_version: 2.7.1
-node_major_version: 20
+node_major_version: 24
 nvm_version: 0.40.0
 nvim_version: 0.11.5
 replace_existing_dotfiles: false

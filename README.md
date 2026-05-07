@@ -22,7 +22,7 @@ supported platforms. For a lighter install, disable them independently:
 
 ```bash
 $ ansible-playbook setup.yml --extra-vars install_docker=false
-$ ansible-playbook setup.yml --extra-vars "install_docker=false install_google_chrome=false install_omnissa_horizon=false"
+$ ansible-playbook setup.yml --extra-vars "install_docker=false install_google_chrome=false install_omnissa_horizon=false install_llm_clis=false"
 ```
 
 Dotfile links are guarded by default. If an unmanaged target such as `.bashrc`
@@ -140,6 +140,15 @@ source-built Git install, delete `~/.local/opt/git-current` and any
 nvm is installed from the pinned `nvm_version` installer script after verifying
 `nvm_install_checksum`. The default Node.js version is controlled by
 `node_major_version`.
+
+OpenCode, GitHub Copilot CLI, and Codex CLI are installed from the latest npm
+packages during normal playbook runs. They are intentionally not pinned or
+managed by `tools/sync_versions.py` because these clients update frequently.
+The playbook installs `opencode-ai`, `@github/copilot`, and `@openai/codex`
+through the nvm-managed default Node.js version and exposes `opencode`,
+`copilot`, and `codex` wrappers in `~/.local/bin`. Disable them with
+`install_llm_clis=false`. Authentication and API keys are left to each CLI's
+normal login flow.
 
 ## Transfer bundle
 
