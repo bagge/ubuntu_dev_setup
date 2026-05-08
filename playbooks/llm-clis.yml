@@ -1,0 +1,72 @@
+---
+- name: Install LLM CLIs
+  hosts: all
+  tags: llm-clis
+  vars:
+    llm_cli_tools:
+      - package: opencode-ai
+        command: opencode
+      - package: "@github/copilot"
+        command: copilot
+      - package: "@openai/codex"
+        command: codex
+  tasks:
+    - name: Create local bin directory
+      ansible.builtin.file:
+        dest: "{{ ansible_env.HOME }}/.local/bin"
+        state: directory
+        mode: "0755"
+      when: install_llm_clis | bool
+
+    - name: Install latest LLM CLI npm packages # noqa command-instead-of-module
+      ansible.builtin.shell: |
+        set -euo pipefail
+        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        nvm use --silent default >/dev/null
+        package="{{ item.package }}"
+        installed_json="$(npm list -g "${package}" --depth=0 --json 2>/dev/null || true)"
+        installed="$(node -e '
+          try {
+            const json = JSON.parse(process.argv[2]);
+            const packageName = process.argv[1];
+            console.log((json.dependencies || {})[packageName]?.version || "");
+          } catch {
+            console.log("");
+          }
+        ' "${package}" "${installed_json}")"
+        latest="$(npm view "${package}" version)"
+        if [[ "${installed}" != "${latest}" ]]; then
+          npm_config_ignore_scripts=false npm install -g "${package}@latest"
+          echo "__llm_cli_changed__"
+        fi
+      args:
+        chdir: "{{ ansible_env.HOME }}"
+        executable: /bin/bash
+      loop: "{{ llm_cli_tools }}"
+      loop_control:
+        label: "{{ item.package }}"
+      register: llm_cli_install
+      changed_when: "'__llm_cli_changed__' in llm_cli_install.stdout"
+      when: install_llm_clis | bool
+
+    - name: Install LLM CLI wrappers
+      ansible.builtin.copy:
+        dest: "{{ ansible_env.HOME }}/.local/bin/{{ item.command }}"
+        mode: "0755"
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          export NVM_DIR="${HOME}/.nvm"
+          if [ ! -s "${NVM_DIR}/nvm.sh" ]; then
+            echo "nvm is not installed at ${NVM_DIR}" >&2
+            exit 1
+          fi
+          # shellcheck source=/dev/null
+          . "${NVM_DIR}/nvm.sh"
+          nvm use --silent default >/dev/null
+          exec "$(npm prefix -g)/bin/{{ item.command }}" "$@"
+      loop: "{{ llm_cli_tools }}"
+      loop_control:
+        label: "{{ item.command }}"
+      when: install_llm_clis | bool

@@ -27,6 +27,10 @@
       - nvim
       - repo
       - unused_deps
+    expected_llm_cli_bins:
+      - codex
+      - copilot
+      - opencode
     expected_formulae:
       - ansible-lint
       - bash
@@ -108,7 +112,7 @@
     - name: Check expected local binaries
       ansible.builtin.stat:
         path: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
-      loop: "{{ expected_local_bins }}"
+      loop: "{{ expected_local_bins + (expected_llm_cli_bins if install_llm_clis | bool else []) }}"
       register: local_bins
 
     - name: Assert expected local binaries exist
@@ -189,6 +193,25 @@
           - nvm_version_result.stdout == nvm_version
           - node_version_result.stdout is match("^v" + (node_major_version | string) + "\\.")
           - default_node_version.stdout is match("^v" + (node_major_version | string) + "\\.")
+
+    - name: Read LLM CLI versions # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/{{ item }} --version"
+      changed_when: false
+      loop:
+        - codex
+        - copilot
+        - opencode
+      register: llm_cli_versions
+      when: install_llm_clis | bool
+
+    - name: Assert LLM CLI version output
+      ansible.builtin.assert:
+        that:
+          - item.stdout | length > 0
+      loop: "{{ llm_cli_versions.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: install_llm_clis | bool
 
     - name: Read global gitignore
       ansible.builtin.slurp:
