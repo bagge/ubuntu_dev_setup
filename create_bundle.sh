@@ -11,6 +11,7 @@ FILE_LIST=(
     ".qnx"
     ".ssh"
     ".config/google-chrome/Default/Bookmarks"
+    ".config/opencode/opencode.json"
 )
 
 OUTPUT_FILE="sensitive-transfer-bundle.tar.gz"
