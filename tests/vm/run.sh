@@ -114,7 +114,7 @@ ensure_password() {
     mkdir -p "${cache_dir}"
     chmod 0700 "${cache_dir}"
     if [[ ! -f "${password_file}" ]]; then
-        python3 -c 'import random, string; print("".join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(24)))' >"${password_file}"
+        python3 -c 'import random, string; print("ubuntu" + "".join(random.SystemRandom().choice(string.digits) for _ in range(3)))' >"${password_file}"
         chmod 0600 "${password_file}"
     fi
 }
