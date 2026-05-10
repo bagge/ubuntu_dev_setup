@@ -114,7 +114,7 @@ ensure_password() {
     mkdir -p "${cache_dir}"
     chmod 0700 "${cache_dir}"
     if [[ ! -f "${password_file}" ]]; then
-        python3 -c 'import random, string; print("".join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(24)))' >"${password_file}"
+        python3 -c 'import random, string; print("ubuntu" + "".join(random.SystemRandom().choice(string.digits) for _ in range(3)))' >"${password_file}"
         chmod 0600 "${password_file}"
     fi
 }
@@ -128,11 +128,11 @@ create_cloud_init() {
 package_update: true
 package_upgrade: false
 packages:
-  - ansible
   - dbus-x11
   - dconf-cli
   - git
   - gnome-shell-extensions
+  - python3-pip
   - shellcheck
   - ubuntu-desktop
   - xrdp
@@ -143,6 +143,7 @@ chpasswd:
       password: "${password}"
       type: text
 runcmd:
+  - PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install ansible
   - systemctl enable --now xrdp
   - adduser xrdp ssl-cert
 EOF

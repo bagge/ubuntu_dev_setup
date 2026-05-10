@@ -62,6 +62,16 @@
         - dev_setup_platform == 'ubuntu'
         - ubuntu_gnome_customization_available | default(false) | bool
 
+    - name: Enable Ubuntu Dock
+      ansible.builtin.command:
+        cmd: gnome-extensions enable ubuntu-dock@ubuntu.com
+      register: enable_ubuntu_dock
+      changed_when: "enabled_extensions.value != None and 'ubuntu-dock' not in enabled_extensions.value"
+      failed_when: "enabled_extensions.value != None and enable_ubuntu_dock.rc != 0"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ubuntu_gnome_customization_available | default(false) | bool
+
     - name: Configure switch to workspace left
       community.general.dconf:
         key: /org/gnome/desktop/wm/keybindings/switch-to-workspace-left
@@ -109,6 +119,22 @@
 
     - name: Set dark mode
       ansible.builtin.command: gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+      changed_when: false
+      tags: gnome-appearance
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ubuntu_gnome_customization_available | default(false) | bool
+
+    - name: Set GTK theme to Yaru-dark
+      ansible.builtin.command: gsettings set org.gnome.desktop.interface gtk-theme Yaru-dark
+      changed_when: false
+      tags: gnome-appearance
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ubuntu_gnome_customization_available | default(false) | bool
+
+    - name: Set default window buttons
+      ansible.builtin.command: gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
       changed_when: false
       tags: gnome-appearance
       when:

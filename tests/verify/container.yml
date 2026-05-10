@@ -117,6 +117,16 @@
           - source_git_version_result.stdout == "git version " + git_version
           - resolved_git_command.stdout == ansible_env.HOME + "/.local/opt/git-current/bin/git"
 
+    - name: Check source Git man page exists
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.local/opt/git-{{ git_version }}/share/man/man1/git-checkout.1"
+      register: git_man_page
+
+    - name: Assert source Git man page is installed
+      ansible.builtin.assert:
+        that:
+          - git_man_page.stat.exists
+
     - name: Read GitHub CLI version # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/gh --version"
       changed_when: false

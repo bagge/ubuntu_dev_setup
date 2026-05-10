@@ -50,12 +50,22 @@
         creates: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
       when: dev_setup_platform == 'macos'
 
-    - name: Download google-chrome-stable on Ubuntu
-      ansible.builtin.get_url:
-        url: "https://dl.google.com/linux/direct/{{ chrome_deb }}"
-        dest: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
-        checksum: "sha256:{{ chrome_deb_checksum }}"
-        mode: "0644"
+    - name: Add Google Chrome signing key on Ubuntu
+      become: true
+      ansible.builtin.apt_key:
+        url: https://dl.google.com/linux/linux_signing_key.pub
+        keyring: /usr/share/keyrings/google-chrome.gpg
+        state: present
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_google_chrome | bool
+
+    - name: Add Google Chrome apt repository on Ubuntu
+      become: true
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
+        filename: google-chrome
+        state: present
       when:
         - dev_setup_platform == 'ubuntu'
         - install_google_chrome | bool
@@ -63,7 +73,8 @@
     - name: Install google-chrome-stable on Ubuntu
       become: true
       ansible.builtin.apt:
-        deb: "{{ inventory_dir }}/tarballs/{{ chrome_deb }}"
+        name: google-chrome-stable
+        update_cache: true
         state: present
       when:
         - dev_setup_platform == 'ubuntu'
