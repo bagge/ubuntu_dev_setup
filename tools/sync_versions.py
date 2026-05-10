@@ -309,18 +309,6 @@ SOURCES: tuple[Source, ...] = (
         ),
     ),
     Source(
-        "Google Chrome",
-        "chrome_deb",
-        "static_url",
-        note="Mutable upstream package URL pinned by checksum.",
-        checksum_assets=(
-            ChecksumAsset(
-                "https://dl.google.com/linux/direct/{chrome_deb}",
-                "chrome_deb_checksum",
-            ),
-        ),
-    ),
-    Source(
         "Omnissa Horizon Client",
         "horizon_deb",
         "manual",
