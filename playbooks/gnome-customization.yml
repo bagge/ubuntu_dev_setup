@@ -134,6 +134,14 @@
         - dev_setup_platform == 'ubuntu'
         - ubuntu_gnome_customization_available | default(false) | bool
 
+    - name: Set default window buttons
+      ansible.builtin.command: gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+      changed_when: false
+      tags: gnome-appearance
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ubuntu_gnome_customization_available | default(false) | bool
+
     - name: Set dark mode on macOS
       community.general.osx_defaults:
         domain: NSGlobalDomain
