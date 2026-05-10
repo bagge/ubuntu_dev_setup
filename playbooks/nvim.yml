@@ -53,6 +53,7 @@
         state: present
       with_items:
         - ansible-lint
+        - python3-venv
         - wl-clipboard
         - ripgrep
         - curl
@@ -155,16 +156,21 @@
       with_items:
         - "007-golang.bashrc"
 
+    - name: Sync nvim plugins
+      ansible.builtin.command: >
+        {{ ansible_env.HOME }}/.local/bin/nvim --headless '+Lazy! install' +qa
+      args:
+        chdir: "{{ ansible_env.HOME }}"
+      changed_when: false
+      when: install_nvim_tools | bool
+
     - name: Do tool installation in nvim
-      ansible.builtin.shell: >
-        {{ ansible_env.HOME }}/.local/bin/nvim --headless -c 'lua m = require("mason").setup()' \
-                        -c 'MasonInstall shellcheck shfmt stylua gopls gofumpt' \
-                        -c 'MasonInstall goimports lua-language-server' \
-                        -c 'MasonInstall ansible-language-server starpls' \
-                        -c 'MasonInstall bash-language-server efm' \
-                        -c 'MasonInstall yaml-language-server pyright' \
-                        -c 'MasonInstall isort black prettierd' \
-                        -c 'qall'
+      ansible.builtin.shell: |
+        export NVM_DIR="{{ ansible_env.HOME }}/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+        export PATH="{{ inventory_dir }}/tarballs/go/bin:$PATH"
+        {{ ansible_env.HOME }}/.local/bin/nvim --headless \
+          -c "luafile {{ inventory_dir }}/tools/mason-headless-install.lua"
       args:
         executable: /bin/bash
         chdir: "{{ ansible_env.HOME }}"
