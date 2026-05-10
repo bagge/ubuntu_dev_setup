@@ -12,7 +12,9 @@
       become: true
       ansible.builtin.apt:
         name:
+          - asciidoctor
           - build-essential
+          - docbook-xsl-ns
           - gettext
           - git
           - libcurl4-openssl-dev
@@ -20,6 +22,7 @@
           - libssl-dev
           - perl
           - tar
+          - xmlto
           - xz-utils
           - zlib1g-dev
         state: present
@@ -93,6 +96,30 @@
         target: install
         params:
           prefix: "{{ git_prefix }}"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+        - source_git_install_needed | bool
+
+    - name: Build Git man pages on Ubuntu
+      community.general.make:
+        chdir: "{{ git_source_dir }}"
+        target: man
+        params:
+          prefix: "{{ git_prefix }}"
+          USE_ASCIIDOCTOR: 1
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_source_git | bool
+        - source_git_install_needed | bool
+
+    - name: Install Git man pages on Ubuntu
+      community.general.make:
+        chdir: "{{ git_source_dir }}"
+        target: install-man
+        params:
+          prefix: "{{ git_prefix }}"
+          USE_ASCIIDOCTOR: 1
       when:
         - dev_setup_platform == 'ubuntu'
         - install_source_git | bool
