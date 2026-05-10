@@ -128,11 +128,11 @@ create_cloud_init() {
 package_update: true
 package_upgrade: false
 packages:
-  - ansible
   - dbus-x11
   - dconf-cli
   - git
   - gnome-shell-extensions
+  - python3-pip
   - shellcheck
   - ubuntu-desktop
   - xrdp
@@ -143,6 +143,7 @@ chpasswd:
       password: "${password}"
       type: text
 runcmd:
+  - PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install ansible
   - systemctl enable --now xrdp
   - adduser xrdp ssl-cert
 EOF
