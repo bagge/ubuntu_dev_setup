@@ -19,6 +19,25 @@
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
   tasks:
+    - name: Check if needrestart is installed
+      ansible.builtin.stat:
+        path: /etc/needrestart
+      register: needrestart_dir
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Prevent needrestart from restarting xrdp during apt operations
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/needrestart/conf.d/no-xrdp.conf
+        content: |
+          # Prevent automatic xrdp restarts which kill active RDP sessions
+          $nrconf{override_rc}{qr(^xrdp)} = 0;
+        mode: "0644"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - needrestart_dir.stat.isdir is defined
+        - needrestart_dir.stat.isdir
+
     - name: Install python3-psutil (needed by dconf module)
       become: true
       ansible.builtin.apt:
