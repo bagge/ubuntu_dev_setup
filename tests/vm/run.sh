@@ -10,6 +10,7 @@ memory="6G"
 disk="60G"
 recreate=false
 delete=false
+sync_only=false
 
 usage() {
     cat <<'USAGE'
@@ -20,6 +21,7 @@ Create a Multipass Ubuntu GNOME VM for manual desktop testing.
 Options:
   --recreate      Delete and recreate the VM before provisioning.
   --delete        Delete the VM and purge it from Multipass.
+  --sync          Re-sync the repo to an existing VM without recreating it.
   --name NAME     Override the Multipass instance name.
   --cpus N        CPU count for new VMs. Default: 4.
   --memory SIZE   Memory for new VMs. Default: 6G.
@@ -47,6 +49,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --delete)
             delete=true
+            shift
+            ;;
+        --sync)
+            sync_only=true
             shift
             ;;
         --name)
@@ -259,6 +265,17 @@ prepare_repo() {
 
 if "${delete}"; then
     delete_instance
+    exit 0
+fi
+
+if "${sync_only}"; then
+    instance_exists || fail "VM ${name} does not exist. Run without --sync to create it."
+    multipass start "${name}" 2>/dev/null || true
+    wait_for_ssh
+    sync_repo
+    prepare_repo
+    ip_address="$(multipass info "${name}" | awk '/IPv4/ { print $2; exit }')"
+    echo "Repo synced to ${name} (${ip_address:-unknown})."
     exit 0
 fi
 
