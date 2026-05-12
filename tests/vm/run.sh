@@ -10,6 +10,7 @@ memory="6G"
 disk="60G"
 recreate=false
 delete=false
+sync_only=false
 
 usage() {
     cat <<'USAGE'
@@ -20,6 +21,7 @@ Create a Multipass Ubuntu GNOME VM for manual desktop testing.
 Options:
   --recreate      Delete and recreate the VM before provisioning.
   --delete        Delete the VM and purge it from Multipass.
+  --sync          Re-sync the repo to an existing VM without recreating it.
   --name NAME     Override the Multipass instance name.
   --cpus N        CPU count for new VMs. Default: 4.
   --memory SIZE   Memory for new VMs. Default: 6G.
@@ -47,6 +49,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --delete)
             delete=true
+            shift
+            ;;
+        --sync)
+            sync_only=true
             shift
             ;;
         --name)
@@ -92,12 +98,20 @@ command -v multipass >/dev/null 2>&1 || fail "multipass is required"
 command -v python3 >/dev/null 2>&1 || fail "python3 is required"
 command -v tar >/dev/null 2>&1 || fail "tar is required"
 
+# Multipass uses a bridge on a private subnet (typically 10.x). A VPN
+# tunnel interface can shadow that subnet, making the VM unreachable.
+if ip -o link show up 2>/dev/null | grep -v 'tap-' | grep -q 'POINTOPOINT'; then
+    echo "warning: a VPN tunnel interface was detected. This may prevent" >&2
+    echo "         multipass from reaching the VM. If the launch fails or" >&2
+    echo "         the VM is unreachable, disconnect the VPN and retry." >&2
+fi
+
 cache_dir="${HOME}/.cache/ubuntu-dev-setup/gnome-vm/${name}"
 password_file="${cache_dir}/password"
 runtime_dir="${repo_root}/tests/vm/runtime/${name}"
 
 instance_exists() {
-    multipass info "${name}" >/dev/null 2>&1
+    multipass list --format csv 2>/dev/null | grep -q "^${name},"
 }
 
 delete_instance() {
@@ -123,6 +137,13 @@ create_cloud_init() {
     local password="$1"
     local cloud_init="$2"
 
+    # ubuntu-desktop is installed post-launch (install_desktop) to avoid
+    # multipass launch timeouts. Two mitigations are applied here:
+    #  1. write_files prevents NetworkManager from taking over the
+    #     cloud-init-managed network interface.
+    #  2. runcmd pre-upgrades systemd so that the daemon-reexec happens
+    #     now (during cloud-init, when multipass is not monitoring SSH)
+    #     rather than during the ubuntu-desktop install.
     cat >"${cloud_init}" <<EOF
 #cloud-config
 package_update: true
@@ -134,8 +155,19 @@ packages:
   - gnome-shell-extensions
   - python3-pip
   - shellcheck
-  - ubuntu-desktop
   - xrdp
+write_files:
+  - path: /etc/NetworkManager/conf.d/90-cloud-init-unmanaged.conf
+    content: |
+      [main]
+      plugins=keyfile
+      [keyfile]
+      unmanaged-devices=type:ethernet
+  - path: /etc/netplan/99-keep-networkd.yaml
+    content: |
+      network:
+        version: 2
+        renderer: networkd
 chpasswd:
   expire: false
   users:
@@ -143,6 +175,7 @@ chpasswd:
       password: "${password}"
       type: text
 runcmd:
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y systemd
   - PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install ansible
   - systemctl enable --now xrdp
   - adduser xrdp ssl-cert
@@ -162,12 +195,42 @@ launch_instance() {
     fi
 
     printf '%s\n' "${output}" >&2
-    if [[ "${output}" == *"timed out waiting for initialization to complete"* ]] && instance_exists; then
-        echo "Multipass launch timed out, but ${name} exists. Continuing while cloud-init finishes." >&2
+    if [[ "${output}" == *"timed out"* ]] && instance_exists; then
+        echo "Multipass launch timed out, but ${name} exists. Recovering..." >&2
+        multipass stop "${name}" 2>/dev/null || true
+        sleep 5
+        multipass start "${name}" 2>/dev/null || true
         return 0
     fi
 
     return 1
+}
+
+wait_for_ssh() {
+    local max_attempts=60
+    local attempt=0
+    while ! multipass exec "${name}" -- true >/dev/null 2>&1; do
+        attempt=$((attempt + 1))
+        if [[ "${attempt}" -ge "${max_attempts}" ]]; then
+            fail "VM ${name} did not become SSH-accessible after ${max_attempts} attempts"
+        fi
+        echo "Waiting for VM connectivity... (${attempt}/${max_attempts})" >&2
+        sleep 10
+    done
+}
+
+install_desktop() {
+    echo "Installing ubuntu-desktop (this may take several minutes)..." >&2
+    multipass exec "${name}" -- sudo bash -c \
+        'DEBIAN_FRONTEND=noninteractive apt-get install -y ubuntu-desktop'
+    echo "Rebooting VM after desktop installation..." >&2
+    if ! multipass restart "${name}" 2>/dev/null; then
+        echo "Warning: 'multipass restart' failed — attempting stop/start cycle..." >&2
+        multipass stop "${name}" 2>/dev/null || true
+        sleep 2
+        multipass start "${name}" 2>/dev/null || true
+    fi
+    wait_for_ssh
 }
 
 sync_repo() {
@@ -205,6 +268,17 @@ if "${delete}"; then
     exit 0
 fi
 
+if "${sync_only}"; then
+    instance_exists || fail "VM ${name} does not exist. Run without --sync to create it."
+    multipass start "${name}" 2>/dev/null || true
+    wait_for_ssh
+    sync_repo
+    prepare_repo
+    ip_address="$(multipass info "${name}" | awk '/IPv4/ { print $2; exit }')"
+    echo "Repo synced to ${name} (${ip_address:-unknown})."
+    exit 0
+fi
+
 ensure_password
 password="$(<"${password_file}")"
 
@@ -224,7 +298,10 @@ else
     multipass start "${name}" >/dev/null
 fi
 
+wait_for_ssh
 multipass exec "${name}" -- cloud-init status --wait
+
+install_desktop
 
 guest_arch="$(multipass exec "${name}" -- uname -m)"
 if [[ "${guest_arch}" != "x86_64" ]]; then
