@@ -54,6 +54,7 @@
       ansible.builtin.command: >
         cargo install --git https://github.com/meroton/git-toprepo.git
         --tag {{ toprepo_version }} --root {{ ansible_env.HOME }}/.local
+      changed_when: true
       when:
         - dev_setup_platform == 'macos'
         - toprepo_installed_version.rc != 0 or toprepo_version not in (toprepo_installed_version.stdout | default(''))

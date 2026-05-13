@@ -27,7 +27,7 @@
         state: absent
       when:
         - dev_setup_platform == 'ubuntu'
-        - kitty_download.changed
+        - kitty_download.changed # noqa: no-handler
 
     - name: Create directory for kitty.app on Ubuntu
       ansible.builtin.file:
@@ -36,7 +36,7 @@
         mode: "0755"
       when:
         - dev_setup_platform == 'ubuntu'
-        - kitty_download.changed
+        - kitty_download.changed # noqa: no-handler
 
     - name: Extract kitty tarball on Ubuntu
       ansible.builtin.unarchive:
@@ -45,7 +45,7 @@
         remote_src: true
       when:
         - dev_setup_platform == 'ubuntu'
-        - kitty_download.changed
+        - kitty_download.changed # noqa: no-handler
 
     - name: Fix kitty path in desktop files on Ubuntu
       ansible.builtin.replace:
