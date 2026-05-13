@@ -3,7 +3,7 @@
   hosts: all
   tags: fonts
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Install Hack Nerd Font on macOS
       community.general.homebrew_cask:
@@ -14,7 +14,7 @@
 
     - name: Create font directory on Ubuntu
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.local/share/fonts"
+        path: "{{ ansible_facts.env.HOME }}/.local/share/fonts"
         state: directory
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
@@ -30,9 +30,9 @@
     - name: Extract fonts on Ubuntu
       ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/Hack.zip"
-        dest: "{{ ansible_env.HOME }}/.local/share/fonts"
+        dest: "{{ ansible_facts.env.HOME }}/.local/share/fonts"
         remote_src: true
-        creates: "{{ ansible_env.HOME }}/.local/share/fonts/HackNerdFont-Regular.ttf"
+        creates: "{{ ansible_facts.env.HOME }}/.local/share/fonts/HackNerdFont-Regular.ttf"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Update font cache on Ubuntu

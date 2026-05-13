@@ -6,20 +6,20 @@
     - name: Link bashrc-snippets to home directory
       ansible.builtin.file:
         src: "{{ inventory_dir }}/bashrc.d"
-        dest: "{{ ansible_env.HOME }}/.bashrc.d"
+        dest: "{{ ansible_facts.env.HOME }}/.bashrc.d"
         state: link
 
     - name: Link bashrc to home directory
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/bashrc"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.bashrc"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.bashrc"
 
     - name: Link bash_profile to home directory on macOS
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/bash_profile"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.bash_profile"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.bash_profile"
       when: dev_setup_platform == 'macos'
 
     - name: Enable default bashrc snippets

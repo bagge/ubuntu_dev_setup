@@ -12,12 +12,12 @@
             dev_setup_platform == 'ubuntu'
             and run_desktop_customization | bool
             and (
-              'GNOME' in ansible_env.XDG_CURRENT_DESKTOP | default('')
-              or 'gnome' in ansible_env.XDG_SESSION_DESKTOP | default('') | lower
-              or 'gnome' in ansible_env.DESKTOP_SESSION | default('') | lower
+              'GNOME' in ansible_facts.env.XDG_CURRENT_DESKTOP | default('')
+              or 'gnome' in ansible_facts.env.XDG_SESSION_DESKTOP | default('') | lower
+              or 'gnome' in ansible_facts.env.DESKTOP_SESSION | default('') | lower
             )
-            and ansible_env.DISPLAY | default('') | length > 0
-            and ansible_env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
+            and ansible_facts.env.DISPLAY | default('') | length > 0
+            and ansible_facts.env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
           }}
       when: dev_setup_platform == 'ubuntu'
 
@@ -154,7 +154,7 @@
 
     - name: Create LaunchAgents directory on macOS
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/Library/LaunchAgents"
+        path: "{{ ansible_facts.env.HOME }}/Library/LaunchAgents"
         state: directory
         mode: "0755"
       when:
@@ -163,7 +163,7 @@
 
     - name: Install Caps Lock to Escape LaunchAgent on macOS
       ansible.builtin.copy:
-        dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
+        dest: "{{ ansible_facts.env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
         mode: "0644"
         content: |
           <?xml version="1.0" encoding="UTF-8"?>
@@ -189,7 +189,9 @@
         - run_desktop_customization | bool
 
     - name: Load Caps Lock to Escape LaunchAgent on macOS
-      ansible.builtin.command: launchctl bootstrap "gui/{{ ansible_user_uid }}" "{{ ansible_env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
+      ansible.builtin.command: >-
+        launchctl bootstrap "gui/{{ ansible_facts.user_uid }}"
+        "{{ ansible_facts.env.HOME }}/Library/LaunchAgents/dev.setup.capslock-escape.plist"
       register: caps_lock_launchctl
       changed_when: caps_lock_launchctl.rc == 0
       failed_when:

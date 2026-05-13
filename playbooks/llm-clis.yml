@@ -13,7 +13,7 @@
   tasks:
     - name: Create local bin directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/bin"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
       when: install_llm_clis | bool
@@ -21,7 +21,7 @@
     - name: Install latest LLM CLI npm packages # noqa command-instead-of-module
       ansible.builtin.shell: |
         set -euo pipefail
-        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
         nvm use --silent default >/dev/null
         package="{{ item.package }}"
         installed_json="$(npm list -g "${package}" --depth=0 --json 2>/dev/null || true)"
@@ -40,7 +40,7 @@
           echo "__llm_cli_changed__"
         fi
       args:
-        chdir: "{{ ansible_env.HOME }}"
+        chdir: "{{ ansible_facts.env.HOME }}"
         executable: /bin/bash
       loop: "{{ llm_cli_tools }}"
       loop_control:
@@ -51,7 +51,7 @@
 
     - name: Install LLM CLI wrappers
       ansible.builtin.copy:
-        dest: "{{ ansible_env.HOME }}/.local/bin/{{ item.command }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item.command }}"
         mode: "0755"
         content: |
           #!/usr/bin/env bash

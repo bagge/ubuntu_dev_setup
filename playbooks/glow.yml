@@ -3,7 +3,7 @@
   hosts: all
   tags: glow
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Install glow on macOS
       community.general.homebrew:

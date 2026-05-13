@@ -55,8 +55,8 @@
     - name: Assert Apple Silicon macOS
       ansible.builtin.assert:
         that:
-          - ansible_system == "Darwin"
-          - ansible_architecture == "arm64"
+          - ansible_facts.system == "Darwin"
+          - ansible_facts.architecture == "arm64"
 
     - name: Check Homebrew
       ansible.builtin.stat:
@@ -71,17 +71,17 @@
 
     - name: Check managed bashrc symlink
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.bashrc"
+        path: "{{ ansible_facts.env.HOME }}/.bashrc"
       register: bashrc_link
 
     - name: Check managed bash_profile symlink
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.bash_profile"
+        path: "{{ ansible_facts.env.HOME }}/.bash_profile"
       register: bash_profile_link
 
     - name: Check managed bashrc.d symlink
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.bashrc.d"
+        path: "{{ ansible_facts.env.HOME }}/.bashrc.d"
       register: bashrc_d_link
 
     - name: Assert bash links point into the workspace
@@ -111,7 +111,7 @@
 
     - name: Check expected local binaries
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+        path: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }}"
       loop: "{{ expected_local_bins + (expected_llm_cli_bins if install_llm_clis | bool else []) }}"
       register: local_bins
 
@@ -135,7 +135,7 @@
       loop: "{{ expected_casks }}"
 
     - name: Read GitHub CLI version # noqa command-instead-of-module
-      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/gh --version"
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/gh --version"
       changed_when: false
       register: github_cli_version_result
 
@@ -158,11 +158,11 @@
       ansible.builtin.assert:
         that:
           - git_editor.stdout == "nvim"
-          - git_excludesfile.stdout == ansible_env.HOME + "/.gitignore"
+          - git_excludesfile.stdout == ansible_facts.env.HOME + "/.gitignore"
 
     - name: Read nvm version # noqa command-instead-of-module
       ansible.builtin.shell: |
-        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
         nvm --version
       args:
         executable: /bin/bash
@@ -171,7 +171,7 @@
 
     - name: Read Node.js version # noqa command-instead-of-module
       ansible.builtin.shell: |
-        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
         node --version
       args:
         executable: /bin/bash
@@ -180,7 +180,7 @@
 
     - name: Read default Node.js version # noqa command-instead-of-module
       ansible.builtin.shell: |
-        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
         nvm version default
       args:
         executable: /bin/bash
@@ -195,7 +195,7 @@
           - default_node_version.stdout is match("^v" + (node_major_version | string) + "\\.")
 
     - name: Read LLM CLI versions # noqa command-instead-of-module
-      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/{{ item }} --version"
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }} --version"
       changed_when: false
       loop:
         - codex
@@ -215,7 +215,7 @@
 
     - name: Read global gitignore
       ansible.builtin.slurp:
-        src: "{{ ansible_env.HOME }}/.gitignore"
+        src: "{{ ansible_facts.env.HOME }}/.gitignore"
       register: global_gitignore
 
     - name: Assert global gitignore contains go.sum

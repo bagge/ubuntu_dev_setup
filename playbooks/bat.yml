@@ -5,7 +5,7 @@
   vars:
     bat_binary: "{{ '/usr/bin/batcat' if dev_setup_platform == 'ubuntu' else homebrew_prefix + '/bin/bat' }}"
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Install bat on Ubuntu
       become: true
@@ -24,14 +24,14 @@
 
     - name: Create local bin directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/bin"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
 
     - name: Symlink bat
       ansible.builtin.file:
         src: "{{ bat_binary }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }}"
         state: link
       with_items:
         - bat

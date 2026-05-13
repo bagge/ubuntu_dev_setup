@@ -12,66 +12,66 @@
   tasks:
     - name: Create local bin directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/bin"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
 
     - name: Fetch bazelisk
       ansible.builtin.get_url:
         url: "https://github.com/bazelbuild/bazelisk/releases/download/v{{ bazelisk_version }}/{{ bazelisk_asset }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/{{ bazelisk_asset }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/{{ bazelisk_asset }}"
         checksum: "sha256:{{ bazelisk_checksum }}"
         mode: "0755"
 
     - name: Link bazelisk
       ansible.builtin.file:
-        src: "{{ ansible_env.HOME }}/.local/bin/{{ bazelisk_asset }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/bazel"
+        src: "{{ ansible_facts.env.HOME }}/.local/bin/{{ bazelisk_asset }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/bazel"
         state: link
 
     - name: Fetch buildifier
       ansible.builtin.get_url:
         url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/buildifier-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/buildifier-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/buildifier-{{ bazel_buildtools_target }}"
         checksum: "sha256:{{ bazel_buildifier_checksum }}"
         mode: "0755"
 
     - name: Link buildifier
       ansible.builtin.file:
-        src: "{{ ansible_env.HOME }}/.local/bin/buildifier-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/buildifier"
+        src: "{{ ansible_facts.env.HOME }}/.local/bin/buildifier-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/buildifier"
         state: link
 
     - name: Fetch buildozer
       ansible.builtin.get_url:
         url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/buildozer-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
         checksum: "sha256:{{ bazel_buildozer_checksum }}"
         mode: "0755"
 
     - name: Link buildozer
       ansible.builtin.file:
-        src: "{{ ansible_env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/buildozer"
+        src: "{{ ansible_facts.env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/buildozer"
         state: link
 
     - name: Fetch unused_deps
       ansible.builtin.get_url:
         url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/unused_deps-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
         checksum: "sha256:{{ bazel_unused_deps_checksum }}"
         mode: "0755"
 
     - name: Link unused_deps
       ansible.builtin.file:
-        src: "{{ ansible_env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/unused_deps"
+        src: "{{ ansible_facts.env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/unused_deps"
         state: link
 
     - name: Fetch repo tool
       ansible.builtin.get_url:
         url: "{{ repo_tool_url }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/repo"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/repo"
         checksum: "sha256:{{ repo_tool_checksum }}"
         mode: "0755"
 
