@@ -8,7 +8,6 @@
     bazel_buildtools_target: "{{ dev_setup_artifacts.bazel_buildtools_target }}"
     bazel_buildifier_checksum: "{{ bazel_buildifier_linux_checksum if dev_setup_platform == 'ubuntu' else bazel_buildifier_macos_checksum }}"
     bazel_buildozer_checksum: "{{ bazel_buildozer_linux_checksum if dev_setup_platform == 'ubuntu' else bazel_buildozer_macos_checksum }}"
-    bazel_unused_deps_checksum: "{{ bazel_unused_deps_linux_checksum if dev_setup_platform == 'ubuntu' else bazel_unused_deps_macos_checksum }}"
   tasks:
     - name: Create local bin directory
       ansible.builtin.file:
@@ -53,19 +52,6 @@
       ansible.builtin.file:
         src: "{{ ansible_facts.env.HOME }}/.local/bin/buildozer-{{ bazel_buildtools_target }}"
         dest: "{{ ansible_facts.env.HOME }}/.local/bin/buildozer"
-        state: link
-
-    - name: Fetch unused_deps
-      ansible.builtin.get_url:
-        url: "https://github.com/bazelbuild/buildtools/releases/download/v{{ bazel_buildtools_version }}/unused_deps-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_facts.env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
-        checksum: "sha256:{{ bazel_unused_deps_checksum }}"
-        mode: "0755"
-
-    - name: Link unused_deps
-      ansible.builtin.file:
-        src: "{{ ansible_facts.env.HOME }}/.local/bin/unused_deps-{{ bazel_buildtools_target }}"
-        dest: "{{ ansible_facts.env.HOME }}/.local/bin/unused_deps"
         state: link
 
     - name: Fetch repo tool

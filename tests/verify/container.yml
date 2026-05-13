@@ -26,7 +26,6 @@
       - mdcat
       - nvim
       - repo
-      - unused_deps
     expected_llm_cli_bins:
       - codex
       - copilot
