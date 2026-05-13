@@ -43,10 +43,10 @@
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
-    - name: Check installed toprepo version on macOS
-      ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/git-toprepo --version"
-      register: toprepo_installed_version
-      changed_when: false
+    - name: Check installed toprepo version marker on macOS
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.local/.toprepo-version"
+      register: toprepo_marker
       failed_when: false
       when: dev_setup_platform == 'macos'
 
@@ -57,7 +57,14 @@
       changed_when: true
       when:
         - dev_setup_platform == 'macos'
-        - toprepo_installed_version.rc != 0 or toprepo_version not in (toprepo_installed_version.stdout | default(''))
+        - toprepo_marker.content is not defined or (toprepo_marker.content | b64decode | trim) != toprepo_version
+
+    - name: Write toprepo version marker on macOS
+      ansible.builtin.copy:
+        content: "{{ toprepo_version }}"
+        dest: "{{ ansible_env.HOME }}/.local/.toprepo-version"
+        mode: "0644"
+      when: dev_setup_platform == 'macos'
 
     - name: Add Google Chrome signing key on Ubuntu
       become: true
