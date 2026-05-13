@@ -5,8 +5,8 @@
   vars:
     git_source_archive: "git-{{ git_version }}.tar.xz"
     git_source_dir: "{{ inventory_dir }}/repos/git-{{ git_version }}"
-    git_prefix: "{{ ansible_env.HOME }}/.local/opt/git-{{ git_version }}"
-    git_current_prefix: "{{ ansible_env.HOME }}/.local/opt/git-current"
+    git_prefix: "{{ ansible_facts.env.HOME }}/.local/opt/git-{{ git_version }}"
+    git_current_prefix: "{{ ansible_facts.env.HOME }}/.local/opt/git-current"
   tasks:
     - name: Install Git build dependencies on Ubuntu
       become: true
@@ -38,7 +38,7 @@
         mode: "0755"
       loop:
         - "{{ inventory_dir }}/repos"
-        - "{{ ansible_env.HOME }}/.local/opt"
+        - "{{ ansible_facts.env.HOME }}/.local/opt"
       when:
         - dev_setup_platform == 'ubuntu'
         - install_source_git | bool

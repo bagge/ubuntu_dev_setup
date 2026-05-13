@@ -28,15 +28,15 @@
     - name: Determine setup platform
       ansible.builtin.set_fact:
         dev_setup_platform: >-
-          {%- if ansible_system == 'Darwin' -%}
-          macos{%- elif ansible_distribution == 'Ubuntu' -%}
+          {%- if ansible_facts.system == 'Darwin' -%}
+          macos{%- elif ansible_facts.distribution == 'Ubuntu' -%}
           ubuntu{%- else -%}
           unsupported{%- endif -%}
         dev_setup_arch: >-
-          {%- if ansible_architecture in ['x86_64', 'amd64'] -%}
-          amd64{%- elif ansible_architecture in ['arm64', 'aarch64'] -%}
+          {%- if ansible_facts.architecture in ['x86_64', 'amd64'] -%}
+          amd64{%- elif ansible_facts.architecture in ['arm64', 'aarch64'] -%}
           arm64{%- else -%}
-          {{ ansible_architecture }}{%- endif -%}
+          {{ ansible_facts.architecture }}{%- endif -%}
 
     - name: Determine setup platform and architecture key
       ansible.builtin.set_fact:
@@ -48,8 +48,8 @@
           - dev_setup_platform in ['ubuntu', 'macos']
           - dev_setup_platform_arch_key in dev_setup_artifact_map
         fail_msg: >-
-          Unsupported platform: {{ ansible_system }} {{ ansible_distribution | default('') }}
-          {{ ansible_architecture }}. Supported platforms are Ubuntu amd64 and
+          Unsupported platform: {{ ansible_facts.system }} {{ ansible_facts.distribution | default('') }}
+          {{ ansible_facts.architecture }}. Supported platforms are Ubuntu amd64 and
           macOS Apple Silicon.
 
     - name: Set platform artifact names

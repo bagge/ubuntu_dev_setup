@@ -5,7 +5,7 @@
   vars:
     toprepo_asset: "git-toprepo-{{ toprepo_version }}-{{ dev_setup_artifacts.toprepo_target }}"
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.HOME }}/.cargo/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Install other apt packages on Ubuntu
       become: true
@@ -38,14 +38,14 @@
     - name: Download toprepo on Ubuntu
       ansible.builtin.get_url:
         url: "https://github.com/meroton/git-toprepo/releases/download/{{ toprepo_version }}/{{ toprepo_asset }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/git-toprepo"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/git-toprepo"
         checksum: "sha256:{{ toprepo_linux_checksum }}"
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Check installed toprepo version marker on macOS
       ansible.builtin.slurp:
-        src: "{{ ansible_env.HOME }}/.local/.toprepo-version"
+        src: "{{ ansible_facts.env.HOME }}/.local/.toprepo-version"
       register: toprepo_marker
       failed_when: false
       when: dev_setup_platform == 'macos'
@@ -53,7 +53,7 @@
     - name: Install toprepo on macOS
       ansible.builtin.command: >
         cargo install --git https://github.com/meroton/git-toprepo.git
-        --tag {{ toprepo_version }} --root {{ ansible_env.HOME }}/.local
+        --tag {{ toprepo_version }} --root {{ ansible_facts.env.HOME }}/.local
       changed_when: true
       when:
         - dev_setup_platform == 'macos'
@@ -62,7 +62,7 @@
     - name: Write toprepo version marker on macOS
       ansible.builtin.copy:
         content: "{{ toprepo_version }}"
-        dest: "{{ ansible_env.HOME }}/.local/.toprepo-version"
+        dest: "{{ ansible_facts.env.HOME }}/.local/.toprepo-version"
         mode: "0644"
       when: dev_setup_platform == 'macos'
 

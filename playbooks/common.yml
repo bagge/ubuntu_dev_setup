@@ -17,7 +17,7 @@
       - shfmt
       - stylua
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Check if needrestart is installed
       ansible.builtin.stat:

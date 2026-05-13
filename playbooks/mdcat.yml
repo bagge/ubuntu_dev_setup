@@ -8,7 +8,7 @@
   tasks:
     - name: Create local bin directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/bin"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
@@ -32,13 +32,13 @@
     - name: Link mdcat
       ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat"
-        dest: "{{ ansible_env.HOME }}/.local/bin/mdcat"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/mdcat"
         state: link
       when: dev_setup_platform == 'ubuntu'
 
     - name: Create local man directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/share/man/man1"
+        dest: "{{ ansible_facts.env.HOME }}/.local/share/man/man1"
         state: directory
         mode: "0755"
       when: dev_setup_platform == 'ubuntu'
@@ -46,7 +46,7 @@
     - name: Copy manfile
       ansible.builtin.copy:
         src: "{{ inventory_dir }}/tarballs/{{ mdcat_archive }}/mdcat.1/mdcat.1"
-        dest: "{{ ansible_env.HOME }}/.local/share/man/man1/mdcat.1"
+        dest: "{{ ansible_facts.env.HOME }}/.local/share/man/man1/mdcat.1"
         mode: "0644"
       register: manfile_copy
       when: dev_setup_platform == 'ubuntu'

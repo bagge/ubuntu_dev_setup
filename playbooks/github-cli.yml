@@ -9,7 +9,7 @@
   tasks:
     - name: Create local bin directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/bin"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
 
@@ -30,5 +30,5 @@
     - name: Link GitHub CLI
       ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/{{ github_cli_archive_dir }}/bin/gh"
-        dest: "{{ ansible_env.HOME }}/.local/bin/gh"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/gh"
         state: link

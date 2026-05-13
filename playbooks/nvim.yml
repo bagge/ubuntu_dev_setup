@@ -13,7 +13,7 @@
       - curl
       - ripgrep
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Download nvim
       ansible.builtin.get_url:
@@ -39,7 +39,7 @@
     - name: Link nvim installation
       ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}/bin/nvim"
-        dest: "{{ ansible_env.HOME }}/.local/bin/nvim"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/nvim"
         state: link
 
     - name: Clone nvim-config # noqa latest[git]
@@ -51,7 +51,7 @@
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/repos/nvim-config"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.config/nvim"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/nvim"
 
     - name: Install packages used by nvim
       become: true
@@ -91,12 +91,12 @@
     - name: Read installed nvm version # noqa command-instead-of-module
       become: false
       ansible.builtin.shell: |
-        if [ -s "{{ ansible_env.HOME }}/.nvm/nvm.sh" ]; then
-          . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        if [ -s "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh" ]; then
+          . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
           nvm --version
         fi
       args:
-        chdir: "{{ ansible_env.HOME }}"
+        chdir: "{{ ansible_facts.env.HOME }}"
         executable: /bin/bash
       register: nvm_installed_version
       changed_when: false
@@ -107,13 +107,13 @@
       environment:
         PROFILE: /dev/null
       args:
-        chdir: "{{ ansible_env.HOME }}"
+        chdir: "{{ ansible_facts.env.HOME }}"
       when: nvm_installed_version.stdout != nvm_version
       changed_when: true
 
     - name: Install Node.js # noqa command-instead-of-module
       ansible.builtin.shell: |
-        . "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
         changed=0
         if ! nvm version {{ node_major_version }} >/dev/null 2>&1; then
           nvm install {{ node_major_version }}
@@ -128,7 +128,7 @@
           echo "__node_changed__"
         fi
       args:
-        chdir: "{{ ansible_env.HOME }}"
+        chdir: "{{ ansible_facts.env.HOME }}"
         executable: /bin/bash
       register: node_install
       changed_when: "'__node_changed__' in node_install.stdout"
@@ -172,21 +172,21 @@
 
     - name: Sync nvim plugins
       ansible.builtin.command: >
-        {{ ansible_env.HOME }}/.local/bin/nvim --headless '+Lazy! install' +qa
+        {{ ansible_facts.env.HOME }}/.local/bin/nvim --headless '+Lazy! install' +qa
       args:
-        chdir: "{{ ansible_env.HOME }}"
+        chdir: "{{ ansible_facts.env.HOME }}"
       changed_when: false
       when: install_nvim_tools | bool
 
     - name: Do tool installation in nvim
       ansible.builtin.shell: |
-        export NVM_DIR="{{ ansible_env.HOME }}/.nvm"
+        export NVM_DIR="{{ ansible_facts.env.HOME }}/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
         export PATH="{{ inventory_dir }}/tarballs/go/bin:$PATH"
-        {{ ansible_env.HOME }}/.local/bin/nvim --headless \
+        {{ ansible_facts.env.HOME }}/.local/bin/nvim --headless \
           -c "luafile {{ inventory_dir }}/tools/mason-headless-install.lua"
       args:
         executable: /bin/bash
-        chdir: "{{ ansible_env.HOME }}"
-        creates: "{{ ansible_env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
+        chdir: "{{ ansible_facts.env.HOME }}"
+        creates: "{{ ansible_facts.env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
       when: install_nvim_tools | bool

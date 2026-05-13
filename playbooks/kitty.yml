@@ -3,7 +3,7 @@
   hosts: all
   tags: kitty
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Install kitty on macOS
       community.general.homebrew_cask:
@@ -51,7 +51,7 @@
       ansible.builtin.replace:
         path: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
         regexp: 'Exec=kitty'
-        replace: 'Exec={{ ansible_env.HOME }}/.local/bin/kitty'
+        replace: 'Exec={{ ansible_facts.env.HOME }}/.local/bin/kitty'
       with_items:
         - kitty.desktop
         - kitty-open.desktop
@@ -61,7 +61,7 @@
       ansible.builtin.replace:
         path: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
         regexp: 'Icon=kitty'
-        replace: 'Icon={{ ansible_env.HOME }}/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png'
+        replace: 'Icon={{ ansible_facts.env.HOME }}/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png'
       with_items:
         - kitty.desktop
         - kitty-open.desktop
@@ -69,7 +69,7 @@
 
     - name: Create destination directory for desktop files on Ubuntu
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.local/share/applications"
+        path: "{{ ansible_facts.env.HOME }}/.local/share/applications"
         state: directory
         mode: "0775"
       when: dev_setup_platform == 'ubuntu'
@@ -77,7 +77,7 @@
     - name: Install kitty desktop file on Ubuntu
       ansible.builtin.copy:
         src: "{{ inventory_dir }}/tarballs/kitty.app/share/applications/{{ item }}"
-        dest: "{{ ansible_env.HOME }}/.local/share/applications/{{ item }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/share/applications/{{ item }}"
         mode: "0644"
       with_items:
         - kitty.desktop
@@ -86,7 +86,7 @@
 
     - name: Create config directory
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.config"
+        path: "{{ ansible_facts.env.HOME }}/.config"
         state: directory
         mode: "0755"
 
@@ -94,7 +94,7 @@
       ansible.builtin.copy:
         content: |
           kitty.desktop
-        dest: "{{ ansible_env.HOME }}/.config/xdg-terminals.list"
+        dest: "{{ ansible_facts.env.HOME }}/.config/xdg-terminals.list"
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 
@@ -105,17 +105,17 @@
             dev_setup_platform == 'ubuntu'
             and run_desktop_customization | default(run_gnome_customization | default(true)) | bool
             and (
-              'GNOME' in ansible_env.XDG_CURRENT_DESKTOP | default('')
-              or 'gnome' in ansible_env.XDG_SESSION_DESKTOP | default('') | lower
-              or 'gnome' in ansible_env.DESKTOP_SESSION | default('') | lower
+              'GNOME' in ansible_facts.env.XDG_CURRENT_DESKTOP | default('')
+              or 'gnome' in ansible_facts.env.XDG_SESSION_DESKTOP | default('') | lower
+              or 'gnome' in ansible_facts.env.DESKTOP_SESSION | default('') | lower
             )
-            and ansible_env.DISPLAY | default('') | length > 0
-            and ansible_env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
+            and ansible_facts.env.DISPLAY | default('') | length > 0
+            and ansible_facts.env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
           }}
       when: dev_setup_platform == 'ubuntu'
 
     - name: Configure gnome to use kitty as default terminal
-      ansible.builtin.command: gsettings set org.gnome.desktop.default-applications.terminal exec "{{ ansible_env.HOME }}/.local/bin/kitty"
+      ansible.builtin.command: gsettings set org.gnome.desktop.default-applications.terminal exec "{{ ansible_facts.env.HOME }}/.local/bin/kitty"
       changed_when: false
       when:
         - dev_setup_platform == 'ubuntu'
@@ -123,7 +123,7 @@
 
     - name: Create kitty config directory
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.config/kitty"
+        path: "{{ ansible_facts.env.HOME }}/.config/kitty"
         state: directory
         mode: "0755"
 
@@ -131,25 +131,25 @@
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/kitty.conf"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.config/kitty/kitty.conf"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/kitty/kitty.conf"
 
     - name: Link kitty installation on Ubuntu
       ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/kitty.app"
-        dest: "{{ ansible_env.HOME }}/.local/kitty.app"
+        dest: "{{ ansible_facts.env.HOME }}/.local/kitty.app"
         state: link
       when: dev_setup_platform == 'ubuntu'
 
     - name: Create local bin directory
       ansible.builtin.file:
-        dest: "{{ ansible_env.HOME }}/.local/bin"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin"
         state: directory
         mode: "0755"
 
     - name: Link kitty binaries on Ubuntu
       ansible.builtin.file:
         src: "../kitty.app/bin/{{ item }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }}"
         state: link
       with_items:
         - kitty
@@ -159,7 +159,7 @@
     - name: Link kitty binaries on macOS
       ansible.builtin.file:
         src: "/Applications/kitty.app/Contents/MacOS/{{ item }}"
-        dest: "{{ ansible_env.HOME }}/.local/bin/{{ item }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }}"
         state: link
       with_items:
         - kitty
@@ -176,7 +176,7 @@
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/repos/kitty-themes/themes/Dracula.conf"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.config/kitty/theme.conf"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/kitty/theme.conf"
 
     - name: Clone kitty-grab
       ansible.builtin.git:
@@ -188,4 +188,4 @@
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/repos/kitty_grab/grab-vim.conf.example"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.config/kitty/grab.conf"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/kitty/grab.conf"

@@ -3,7 +3,7 @@
   hosts: all
   tags: ranger
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Install ranger on Ubuntu
       become: true
@@ -22,7 +22,7 @@
 
     - name: Create ranger config directory
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.config/ranger"
+        path: "{{ ansible_facts.env.HOME }}/.config/ranger"
         state: directory
         mode: "0755"
 
@@ -30,4 +30,4 @@
       ansible.builtin.include_tasks: tasks/guarded-link.yml
       vars:
         guarded_link_src: "{{ inventory_dir }}/ranger.conf"
-        guarded_link_dest: "{{ ansible_env.HOME }}/.config/ranger/rc.conf"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/ranger/rc.conf"

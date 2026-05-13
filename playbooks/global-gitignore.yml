@@ -7,21 +7,21 @@
       community.general.git_config:
         name: core.excludesfile
         scope: global
-        value: "{{ ansible_env.HOME }}/.gitignore"
+        value: "{{ ansible_facts.env.HOME }}/.gitignore"
 
     - name: Check .gitignore
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.gitignore"
+        path: "{{ ansible_facts.env.HOME }}/.gitignore"
       register: gitignore
 
     - name: Ensure .gitignore exists
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.gitignore"
+        path: "{{ ansible_facts.env.HOME }}/.gitignore"
         state: touch
         mode: "0644"
       when: not gitignore.stat.exists
 
     - name: Add go.sum to global gitignore
       ansible.builtin.lineinfile:
-        path: "{{ ansible_env.HOME }}/.gitignore"
+        path: "{{ ansible_facts.env.HOME }}/.gitignore"
         line: go.sum
