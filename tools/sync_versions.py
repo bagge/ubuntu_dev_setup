@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -363,16 +364,43 @@ def request_headers(accept: str = "application/vnd.github+json") -> dict[str, st
     return headers
 
 
+def _urlopen_with_retry(
+    request: urllib.request.Request,
+    *,
+    max_retries: int = 4,
+) -> Any:
+    """Open *request*, retrying on 403/429 rate-limit responses with backoff."""
+    for attempt in range(max_retries + 1):
+        try:
+            return urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS)
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            retryable = exc.code in (403, 429) and "rate limit" in body.lower()
+            if not retryable or attempt == max_retries:
+                raise
+            wait = 2 ** attempt
+            retry_after = exc.headers.get("Retry-After")
+            if retry_after and retry_after.isdigit():
+                wait = max(wait, int(retry_after))
+            print(
+                f"  Rate-limited; retrying in {wait}s "
+                f"(attempt {attempt + 1}/{max_retries})...",
+                file=sys.stderr,
+            )
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
+
+
 def fetch_json(url: str) -> Any:
     headers = request_headers()
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+    with _urlopen_with_retry(request) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
 def fetch_text(url: str) -> str:
     request = urllib.request.Request(url, headers=request_headers("text/plain"))
-    with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+    with _urlopen_with_retry(request) as response:
         return response.read().decode("utf-8")
 
 
@@ -382,7 +410,7 @@ def fetch_sha256(url: str) -> str:
         headers=request_headers("application/octet-stream"),
     )
     digest = hashlib.sha256()
-    with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+    with _urlopen_with_retry(request) as response:
         while True:
             chunk = response.read(1024 * 1024)
             if not chunk:
@@ -828,6 +856,11 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if not os.environ.get("GITHUB_TOKEN"):
+        print(
+            "hint: set GITHUB_TOKEN to avoid GitHub API rate limits (60 req/h unauthenticated).",
+            file=sys.stderr,
+        )
     values = load_vars()
     results = collect_results(values, current_checksums=args.write_current_checksums)
     print_results(results)
