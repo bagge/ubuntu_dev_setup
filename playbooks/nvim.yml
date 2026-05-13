@@ -21,13 +21,20 @@
         dest: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}.tar"
         checksum: "sha256:{{ nvim_checksum }}"
         mode: "0644"
+      register: nvim_download
+
+    - name: Remove old nvim before re-extracting
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}"
+        state: absent
+      when: nvim_download.changed # noqa: no-handler
 
     - name: Extract nvim
       ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
-        creates: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}/bin/nvim"
+      when: nvim_download.changed # noqa: no-handler
 
     - name: Link nvim installation
       ansible.builtin.file:
@@ -140,13 +147,20 @@
         dest: "{{ inventory_dir }}/tarballs/{{ golang_archive_name }}.tar"
         checksum: "sha256:{{ golang_checksum }}"
         mode: "0644"
+      register: golang_download
+
+    - name: Remove old golang before re-extracting
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/tarballs/go"
+        state: absent
+      when: golang_download.changed # noqa: no-handler
 
     - name: Extract golang
       ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/{{ golang_archive_name }}.tar"
         dest: "{{ inventory_dir }}/tarballs"
         remote_src: true
-        creates: "{{ inventory_dir }}/tarballs/go/bin/go"
+      when: golang_download.changed # noqa: no-handler
 
     - name: Enable golang bashrc snippet
       ansible.builtin.file:

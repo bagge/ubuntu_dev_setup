@@ -12,28 +12,40 @@
         update_homebrew: "{{ homebrew_update | bool }}"
       when: dev_setup_platform == 'macos'
 
-    - name: Create directory for kitty.app on Ubuntu
-      ansible.builtin.file:
-        path: "{{ inventory_dir }}/tarballs/kitty.app"
-        state: directory
-        mode: "0755"
-      when: dev_setup_platform == 'ubuntu'
-
     - name: Download kitty release on Ubuntu
       ansible.builtin.get_url:
         url: "https://github.com/kovidgoyal/kitty/releases/download/v{{ kitty_version }}/kitty-{{ kitty_version }}-{{ dev_setup_artifacts.kitty_target }}.txz"
         dest: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-{{ dev_setup_artifacts.kitty_target }}.tar"
         checksum: "sha256:{{ kitty_linux_checksum }}"
         mode: "0644"
+      register: kitty_download
       when: dev_setup_platform == 'ubuntu'
+
+    - name: Remove old kitty.app before re-extracting on Ubuntu
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/tarballs/kitty.app"
+        state: absent
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - kitty_download.changed # noqa: no-handler
+
+    - name: Create directory for kitty.app on Ubuntu
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/tarballs/kitty.app"
+        state: directory
+        mode: "0755"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - kitty_download.changed # noqa: no-handler
 
     - name: Extract kitty tarball on Ubuntu
       ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/kitty-{{ kitty_version }}-{{ dev_setup_artifacts.kitty_target }}.tar"
         dest: "{{ inventory_dir }}/tarballs/kitty.app"
         remote_src: true
-        creates: "{{ inventory_dir }}/tarballs/kitty.app/bin/kitty"
-      when: dev_setup_platform == 'ubuntu'
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - kitty_download.changed # noqa: no-handler
 
     - name: Fix kitty path in desktop files on Ubuntu
       ansible.builtin.replace:

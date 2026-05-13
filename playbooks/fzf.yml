@@ -8,12 +8,14 @@
         repo: https://github.com/junegunn/fzf
         dest: "{{ inventory_dir }}/repos/fzf"
         version: "v{{ fzf_version }}"
+      register: fzf_clone
 
     - name: Build fzf
       ansible.builtin.command:
         cmd: "./install --no-update-rc"
         chdir: "{{ inventory_dir }}/repos/fzf"
-        creates: "{{ inventory_dir }}/repos/fzf/bin/fzf"
+      when: fzf_clone.changed # noqa: no-handler
+      changed_when: true
 
     - name: Clone fzf-git
       ansible.builtin.git:
