@@ -8,6 +8,7 @@
         command: opencode
       - package: "@github/copilot"
         command: copilot
+        unset_github_token: true
       - package: "@openai/codex"
         command: codex
   tasks:
@@ -65,6 +66,9 @@
           # shellcheck source=/dev/null
           . "${NVM_DIR}/nvm.sh"
           nvm use --silent default >/dev/null
+          {% if item.unset_github_token | default(false) %}
+          unset GITHUB_TOKEN GH_TOKEN
+          {% endif %}
           exec "$(npm prefix -g)/bin/{{ item.command }}" "$@"
       loop: "{{ llm_cli_tools }}"
       loop_control:
