@@ -172,9 +172,6 @@ On the new machine, remember to do the following manually:
 - Start neovim to have lazy download all plugins
 - Authenticate Copilot in neovim
 
-TODO:
-- Add kitty icat command to show bazel deps in terminal
-
 ## Tools
 
 Currently the following tools are installed and setup:
