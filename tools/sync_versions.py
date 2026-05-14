@@ -89,8 +89,6 @@ SOURCES: tuple[Source, ...] = (
             f"buildifier-{MACOS['bazel_buildtools_target']}",
             f"buildozer-{UBUNTU['bazel_buildtools_target']}",
             f"buildozer-{MACOS['bazel_buildtools_target']}",
-            f"unused_deps-{UBUNTU['bazel_buildtools_target']}",
-            f"unused_deps-{MACOS['bazel_buildtools_target']}",
         ),
         checksum_assets=(
             ChecksumAsset(
@@ -108,14 +106,6 @@ SOURCES: tuple[Source, ...] = (
             ChecksumAsset(
                 f"buildozer-{MACOS['bazel_buildtools_target']}",
                 "bazel_buildozer_macos_checksum",
-            ),
-            ChecksumAsset(
-                f"unused_deps-{UBUNTU['bazel_buildtools_target']}",
-                "bazel_unused_deps_linux_checksum",
-            ),
-            ChecksumAsset(
-                f"unused_deps-{MACOS['bazel_buildtools_target']}",
-                "bazel_unused_deps_macos_checksum",
             ),
         ),
     ),
