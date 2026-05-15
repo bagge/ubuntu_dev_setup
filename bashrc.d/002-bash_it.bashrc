@@ -79,3 +79,6 @@ export POWERLINE_RIGHT_PROMPT=" "
 export POWERLINE_PADDING=1
 # shellcheck source=/dev/null
 source "$BASH_IT"/bash_it.sh
+
+# Custom aliases
+alias gau="git add -u"
