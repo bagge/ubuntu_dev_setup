@@ -172,7 +172,7 @@
 
     - name: Sync nvim plugins
       ansible.builtin.command: >
-        {{ ansible_facts.env.HOME }}/.local/bin/nvim --headless '+Lazy! install' +qa
+        {{ ansible_facts.env.HOME }}/.local/bin/nvim --headless '+Lazy! restore' +qa
       args:
         chdir: "{{ ansible_facts.env.HOME }}"
       changed_when: false
@@ -184,9 +184,9 @@
         [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
         export PATH="{{ inventory_dir }}/tarballs/go/bin:$PATH"
         {{ ansible_facts.env.HOME }}/.local/bin/nvim --headless \
-          -c "luafile {{ inventory_dir }}/tools/mason-headless-install.lua"
+          '+MasonToolsInstallSync' +qa
       args:
         executable: /bin/bash
         chdir: "{{ ansible_facts.env.HOME }}"
-        creates: "{{ ansible_facts.env.HOME }}/.local/share/nvim/mason/bin/shellcheck"
+      changed_when: false
       when: install_nvim_tools | bool
