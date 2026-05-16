@@ -286,6 +286,20 @@ SOURCES: tuple[Source, ...] = (
         ),
     ),
     Source(
+        "rustup",
+        "rustup_version",
+        "static_url",
+        note="Rustup archive version is pinned manually; checksum is refreshed from static.rust-lang.org.",
+        checksum_assets=(
+            ChecksumAsset(
+                "rustup-init",
+                "rustup_init_linux_checksum",
+                "https://static.rust-lang.org/rustup/archive/{version}/x86_64-unknown-linux-gnu/rustup-init",
+            ),
+        ),
+    ),
+    Source("Tree-sitter", "tree_sitter_version", "github", "tree-sitter/tree-sitter", "v"),
+    Source(
         "toprepo",
         "toprepo_version",
         "github",

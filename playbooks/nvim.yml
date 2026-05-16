@@ -12,8 +12,11 @@
       - ansible-lint
       - curl
       - ripgrep
+      - tree-sitter-cli
+    rustup_target: x86_64-unknown-linux-gnu
+    rustup_init_name: "rustup-init-{{ rustup_version }}-{{ rustup_target }}"
   environment:
-    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.HOME }}/.cargo/bin:{{ ansible_facts.env.PATH }}"
   tasks:
     - name: Download nvim
       ansible.builtin.get_url:
@@ -42,6 +45,29 @@
         dest: "{{ ansible_facts.env.HOME }}/.local/bin/nvim"
         state: link
 
+    - name: Install packages used by nvim
+      become: true
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - ansible-lint
+        - build-essential
+        - curl
+        - git
+        - python3-venv
+        - ripgrep
+        - wl-clipboard
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Install packages used by nvim on macOS
+      community.general.homebrew:
+        name: "{{ macos_nvim_formulae }}"
+        state: present
+        update_homebrew: "{{ homebrew_update | bool }}"
+        path: "{{ homebrew_prefix }}/bin"
+      when: dev_setup_platform == 'macos'
+
     - name: Clone nvim-config # noqa latest[git]
       ansible.builtin.git:
         repo: https://github.com/bagge/nvim-config.git
@@ -52,27 +78,6 @@
       vars:
         guarded_link_src: "{{ inventory_dir }}/repos/nvim-config"
         guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/nvim"
-
-    - name: Install packages used by nvim
-      become: true
-      ansible.builtin.apt:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - ansible-lint
-        - python3-venv
-        - wl-clipboard
-        - ripgrep
-        - curl
-      when: dev_setup_platform == 'ubuntu'
-
-    - name: Install packages used by nvim on macOS
-      community.general.homebrew:
-        name: "{{ macos_nvim_formulae }}"
-        state: present
-        update_homebrew: "{{ homebrew_update | bool }}"
-        path: "{{ homebrew_prefix }}/bin"
-      when: dev_setup_platform == 'macos'
 
     - name: Set nvim as default editor for git
       community.general.git_config:
@@ -140,6 +145,76 @@
         state: link
       with_items:
         - "006-nvm.bashrc"
+
+    - name: Download rustup-init on Ubuntu
+      ansible.builtin.get_url:
+        url: "https://static.rust-lang.org/rustup/archive/{{ rustup_version }}/{{ rustup_target }}/rustup-init"
+        dest: "{{ inventory_dir }}/tarballs/{{ rustup_init_name }}"
+        checksum: "sha256:{{ rustup_init_linux_checksum }}"
+        mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Install Rust toolchain on Ubuntu
+      ansible.builtin.command: >
+        {{ inventory_dir }}/tarballs/{{ rustup_init_name }}
+        -y --no-modify-path --profile minimal --default-toolchain stable
+      environment:
+        CARGO_HOME: "{{ ansible_facts.env.HOME }}/.cargo"
+        RUSTUP_HOME: "{{ ansible_facts.env.HOME }}/.rustup"
+      args:
+        creates: "{{ ansible_facts.env.HOME }}/.cargo/bin/rustup"
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Ensure stable Rust toolchain on Ubuntu
+      ansible.builtin.command: >
+        {{ ansible_facts.env.HOME }}/.cargo/bin/rustup toolchain install stable --profile minimal
+      environment:
+        CARGO_HOME: "{{ ansible_facts.env.HOME }}/.cargo"
+        RUSTUP_HOME: "{{ ansible_facts.env.HOME }}/.rustup"
+      register: rust_stable_toolchain
+      changed_when: >-
+        'installed' in rust_stable_toolchain.stdout
+        or 'installing' in rust_stable_toolchain.stdout
+        or 'updated' in rust_stable_toolchain.stdout
+        or 'installed' in rust_stable_toolchain.stderr
+        or 'installing' in rust_stable_toolchain.stderr
+        or 'updated' in rust_stable_toolchain.stderr
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Read installed tree-sitter CLI version on Ubuntu # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/tree-sitter --version"
+      register: tree_sitter_cli_version
+      changed_when: false
+      failed_when: false
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Create source repository directory on Ubuntu
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/repos"
+        state: directory
+        mode: "0755"
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Clone tree-sitter source on Ubuntu
+      ansible.builtin.git:
+        repo: https://github.com/tree-sitter/tree-sitter.git
+        dest: "{{ inventory_dir }}/repos/tree-sitter"
+        version: "v{{ tree_sitter_version }}"
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Build and install tree-sitter CLI on Ubuntu
+      ansible.builtin.command: >
+        {{ ansible_facts.env.HOME }}/.cargo/bin/cargo +stable install
+        --locked --path crates/cli --root {{ ansible_facts.env.HOME }}/.local
+      environment:
+        CARGO_HOME: "{{ ansible_facts.env.HOME }}/.cargo"
+        RUSTUP_HOME: "{{ ansible_facts.env.HOME }}/.rustup"
+      args:
+        chdir: "{{ inventory_dir }}/repos/tree-sitter"
+      changed_when: true
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - tree_sitter_cli_version.rc != 0 or tree_sitter_cli_version.stdout is not match("^tree-sitter " + tree_sitter_version + "( |$)")
 
     - name: Download golang
       ansible.builtin.get_url:
