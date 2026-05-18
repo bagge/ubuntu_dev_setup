@@ -141,6 +141,11 @@ nvm is installed from the pinned `nvm_version` installer script after verifying
 `nvm_install_checksum`. The default Node.js version is controlled by
 `node_major_version`.
 
+PlantUML is installed from the pinned `plantuml_version` GitHub release jar
+after verifying `plantuml_checksum`. The playbook links `plantuml.jar` and the
+local `plantuml` wrapper into `~/.local/bin`; Java and Graphviz are installed as
+platform packages.
+
 OpenCode, GitHub Copilot CLI, and Codex CLI are installed from the latest npm
 packages during normal playbook runs. They are intentionally not pinned or
 managed by `tools/sync_versions.py` because these clients update frequently.
@@ -185,6 +190,7 @@ Currently the following tools are installed and setup:
 - bat
 - glow
 - mdcat
+- PlantUML
 
 Additionally my neovim configuration will be fetched and setup which contains
 my preferred plugins.
