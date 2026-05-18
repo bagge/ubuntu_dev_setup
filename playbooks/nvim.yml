@@ -55,6 +55,7 @@
         - build-essential
         - curl
         - git
+        - libclang-dev
         - python3-venv
         - ripgrep
         - wl-clipboard
