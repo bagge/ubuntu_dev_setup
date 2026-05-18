@@ -26,6 +26,7 @@
       - mdcat
       - nvim
       - repo
+      - tree-sitter
     expected_llm_cli_bins:
       - codex
       - copilot
@@ -185,6 +186,16 @@
           - nvm_version_result.stdout == nvm_version
           - node_version_result.stdout is match("^v" + (node_major_version | string) + "\\.")
           - default_node_version.stdout is match("^v" + (node_major_version | string) + "\\.")
+
+    - name: Read Tree-sitter CLI version # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/tree-sitter --version"
+      changed_when: false
+      register: tree_sitter_version_result
+
+    - name: Assert Tree-sitter CLI version
+      ansible.builtin.assert:
+        that:
+          - tree_sitter_version_result.stdout is match("^tree-sitter " + tree_sitter_version + "( |$)")
 
     - name: Read LLM CLI versions # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }} --version"
