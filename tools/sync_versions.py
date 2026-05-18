@@ -277,6 +277,17 @@ SOURCES: tuple[Source, ...] = (
         ),
     ),
     Source(
+        "PlantUML",
+        "plantuml_version",
+        "github",
+        "plantuml/plantuml",
+        "v",
+        ("plantuml-{version}.jar",),
+        checksum_assets=(
+            ChecksumAsset("plantuml-{version}.jar", "plantuml_checksum"),
+        ),
+    ),
+    Source(
         "repo tool",
         "repo_tool_url",
         "static_url",

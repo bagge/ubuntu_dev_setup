@@ -25,6 +25,7 @@
       - kitten
       - kitty
       - nvim
+      - plantuml
       - repo
     expected_llm_cli_bins:
       - codex
@@ -41,6 +42,7 @@
       - glow
       - graphviz
       - jq
+      - openjdk
       - ranger
       - ripgrep
       - rust
@@ -193,6 +195,27 @@
           - nvm_version_result.stdout == nvm_version
           - node_version_result.stdout is match("^v" + (node_major_version | string) + "\\.")
           - default_node_version.stdout is match("^v" + (node_major_version | string) + "\\.")
+
+    - name: Check PlantUML jar symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.local/bin/plantuml.jar"
+      register: plantuml_jar_link
+
+    - name: Assert PlantUML jar symlink exists
+      ansible.builtin.assert:
+        that:
+          - plantuml_jar_link.stat.exists
+          - plantuml_jar_link.stat.islnk
+
+    - name: Read PlantUML version # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/plantuml -version"
+      changed_when: false
+      register: plantuml_version_result
+
+    - name: Assert PlantUML version
+      ansible.builtin.assert:
+        that:
+          - ("PlantUML version " + plantuml_version) in plantuml_version_result.stdout
 
     - name: Read Tree-sitter CLI version # noqa command-instead-of-module
       ansible.builtin.command: "{{ homebrew_prefix }}/bin/tree-sitter --version"

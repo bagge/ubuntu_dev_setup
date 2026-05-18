@@ -11,8 +11,11 @@
     macos_nvim_formulae:
       - ansible-lint
       - curl
+      - graphviz
+      - openjdk
       - ripgrep
       - tree-sitter-cli
+    plantuml_jar_name: "plantuml-{{ plantuml_version }}.jar"
     rustup_target: x86_64-unknown-linux-gnu
     rustup_init_name: "rustup-init-{{ rustup_version }}-{{ rustup_target }}"
   environment:
@@ -39,6 +42,12 @@
         remote_src: true
       when: nvim_download.changed # noqa: no-handler
 
+    - name: Create local bin directory
+      ansible.builtin.file:
+        path: "{{ ansible_facts.env.HOME }}/.local/bin"
+        state: directory
+        mode: "0755"
+
     - name: Link nvim installation
       ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/{{ nvim_archive_name }}/bin/nvim"
@@ -54,7 +63,9 @@
         - ansible-lint
         - build-essential
         - curl
+        - default-jre
         - git
+        - graphviz
         - libclang-dev
         - python3-venv
         - ripgrep
@@ -85,6 +96,25 @@
         name: core.editor
         scope: global
         value: nvim
+
+    - name: Download PlantUML jar
+      ansible.builtin.get_url:
+        url: "https://github.com/plantuml/plantuml/releases/download/v{{ plantuml_version }}/{{ plantuml_jar_name }}"
+        dest: "{{ inventory_dir }}/tarballs/{{ plantuml_jar_name }}"
+        checksum: "sha256:{{ plantuml_checksum }}"
+        mode: "0644"
+
+    - name: Link PlantUML jar
+      ansible.builtin.file:
+        src: "{{ inventory_dir }}/tarballs/{{ plantuml_jar_name }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/plantuml.jar"
+        state: link
+
+    - name: Link PlantUML wrapper
+      ansible.builtin.file:
+        src: "{{ inventory_dir }}/plantuml.sh"
+        dest: "{{ ansible_facts.env.HOME }}/.local/bin/plantuml"
+        state: link
 
     - name: Download nvm installer
       become: false
