@@ -66,26 +66,6 @@
         mode: "0644"
       when: dev_setup_platform == 'macos'
 
-    - name: Add Google Chrome signing key on Ubuntu
-      become: true
-      ansible.builtin.apt_key:
-        url: https://dl.google.com/linux/linux_signing_key.pub
-        keyring: /usr/share/keyrings/google-chrome.gpg
-        state: present
-      when:
-        - dev_setup_platform == 'ubuntu'
-        - install_google_chrome | bool
-
-    - name: Add Google Chrome apt repository on Ubuntu
-      become: true
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
-        filename: google-chrome
-        state: present
-      when:
-        - dev_setup_platform == 'ubuntu'
-        - install_google_chrome | bool
-
     - name: Install google-chrome-stable on Ubuntu
       become: true
       ansible.builtin.apt:

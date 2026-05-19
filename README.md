@@ -133,6 +133,8 @@ is installed from pinned GitHub release archives on both Ubuntu and macOS.
 On Ubuntu, Git is built from the pinned kernel.org source tarball and installed
 under `~/.local/opt/git-<version>`. The active install is exposed through
 `~/.local/opt/git-current`, which is prepended to `PATH` for interactive shells.
+`~/.local/opt/git-current/bin` and `~/.local/bin` are re-applied after bashrc
+snippets so tools installed there take precedence over nvm-managed binaries.
 apt Git remains installed as a bootstrap/build dependency. To remove the
 source-built Git install, delete `~/.local/opt/git-current` and any
 `~/.local/opt/git-*` directories.

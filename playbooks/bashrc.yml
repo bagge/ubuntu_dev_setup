@@ -31,6 +31,7 @@
         - "000-setup-location.bashrc"
         - "004-bash-history.bashrc"
         - "999-optional-auth.bashrc"
+        - "998-path-precedence.bashrc"
 
     - name: Enable Homebrew bashrc snippet on macOS
       ansible.builtin.file:

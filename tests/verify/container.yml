@@ -7,6 +7,7 @@
       - 000-setup-location.bashrc
       - 004-bash-history.bashrc
       - 999-optional-auth.bashrc
+      - 998-path-precedence.bashrc
     expected_tool_snippets:
       - 002-bash_it.bashrc
       - 003-bazel-helpers.bashrc
@@ -100,6 +101,42 @@
         - python3-psutil
         - ranger
 
+    - name: Check Google Chrome deb822 apt repository
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/google-chrome.sources
+      register: google_chrome_apt_sources
+      when: install_google_chrome | bool
+
+    - name: Read Google Chrome apt repository list
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/google-chrome.list
+      register: google_chrome_apt_list
+      when: install_google_chrome | bool
+
+    - name: Read Google Chrome apt defaults
+      ansible.builtin.slurp:
+        src: /etc/default/google-chrome
+      register: google_chrome_default
+      when: install_google_chrome | bool
+
+    - name: Assert Google Chrome apt source is normalized
+      ansible.builtin.assert:
+        that:
+          - "'google-chrome-stable' in ansible_facts.packages"
+          - not google_chrome_apt_sources.stat.exists
+          - google_chrome_repo_line in google_chrome_apt_lines
+          - google_chrome_deb_lines | length == 1
+          - "'repo_add_once=\"false\"' in google_chrome_defaults"
+          - "'repo_reenable_on_distupgrade=\"false\"' in google_chrome_defaults"
+      vars:
+        google_chrome_repo_line: >-
+          deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg]
+          https://dl.google.com/linux/chrome/deb/ stable main
+        google_chrome_apt_lines: "{{ (google_chrome_apt_list.content | b64decode).splitlines() }}"
+        google_chrome_deb_lines: "{{ google_chrome_apt_lines | select('match', '^deb ') | list }}"
+        google_chrome_defaults: "{{ google_chrome_default.content | b64decode }}"
+      when: install_google_chrome | bool
+
     - name: Read source Git version # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/opt/git-current/bin/git --version"
       changed_when: false
@@ -119,6 +156,26 @@
         that:
           - source_git_version_result.stdout == "git version " + git_version
           - resolved_git_command.stdout == ansible_facts.env.HOME + "/.local/opt/git-current/bin/git"
+
+    - name: Resolve LLM CLI wrappers in interactive shell # noqa command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - bash
+          - -ic
+          - command -v {{ item }}
+      loop: "{{ expected_llm_cli_bins }}"
+      changed_when: false
+      register: resolved_llm_cli_wrappers
+      when: install_llm_clis | bool
+
+    - name: Assert LLM CLI wrappers take PATH precedence
+      ansible.builtin.assert:
+        that:
+          - item.stdout == ansible_facts.env.HOME + "/.local/bin/" + item.item
+      loop: "{{ resolved_llm_cli_wrappers.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: install_llm_clis | bool
 
     - name: Check source Git man page exists
       ansible.builtin.stat:
