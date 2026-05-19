@@ -157,22 +157,25 @@
           - source_git_version_result.stdout == "git version " + git_version
           - resolved_git_command.stdout == ansible_facts.env.HOME + "/.local/opt/git-current/bin/git"
 
-    - name: Read interactive shell PATH # noqa command-instead-of-module
+    - name: Resolve LLM CLI wrappers in interactive shell # noqa command-instead-of-module
       ansible.builtin.command:
         argv:
           - bash
           - -ic
-          - printf '%s\n' "$PATH"
+          - command -v {{ item }}
+      loop: "{{ expected_llm_cli_bins }}"
       changed_when: false
-      register: interactive_shell_path
+      register: resolved_llm_cli_wrappers
+      when: install_llm_clis | bool
 
-    - name: Assert interactive shell PATH precedence
+    - name: Assert LLM CLI wrappers take PATH precedence
       ansible.builtin.assert:
         that:
-          - interactive_path_entries[0] == ansible_facts.env.HOME + "/.local/opt/git-current/bin"
-          - interactive_path_entries[1] == ansible_facts.env.HOME + "/.local/bin"
-      vars:
-        interactive_path_entries: "{{ interactive_shell_path.stdout.split(':') }}"
+          - item.stdout == ansible_facts.env.HOME + "/.local/bin/" + item.item
+      loop: "{{ resolved_llm_cli_wrappers.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: install_llm_clis | bool
 
     - name: Check source Git man page exists
       ansible.builtin.stat:
