@@ -3,3 +3,4 @@ __pycache__/
 repos/
 tarballs/
 bashrc.d/enabled/*
+.ansible-venv/
