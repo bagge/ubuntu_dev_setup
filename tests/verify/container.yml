@@ -7,6 +7,7 @@
       - 000-setup-location.bashrc
       - 004-bash-history.bashrc
       - 999-optional-auth.bashrc
+      - 998-path-precedence.bashrc
     expected_tool_snippets:
       - 002-bash_it.bashrc
       - 003-bazel-helpers.bashrc
@@ -155,6 +156,23 @@
         that:
           - source_git_version_result.stdout == "git version " + git_version
           - resolved_git_command.stdout == ansible_facts.env.HOME + "/.local/opt/git-current/bin/git"
+
+    - name: Read interactive shell PATH # noqa command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - bash
+          - -ic
+          - printf '%s\n' "$PATH"
+      changed_when: false
+      register: interactive_shell_path
+
+    - name: Assert interactive shell PATH precedence
+      ansible.builtin.assert:
+        that:
+          - interactive_path_entries[0] == ansible_facts.env.HOME + "/.local/opt/git-current/bin"
+          - interactive_path_entries[1] == ansible_facts.env.HOME + "/.local/bin"
+      vars:
+        interactive_path_entries: "{{ interactive_shell_path.stdout.split(':') }}"
 
     - name: Check source Git man page exists
       ansible.builtin.stat:

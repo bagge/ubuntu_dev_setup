@@ -16,6 +16,7 @@ bash_files=(
     bashrc.d/006-nvm.bashrc
     bashrc.d/007-golang.bashrc
     bashrc.d/999-optional-auth.bashrc
+    bashrc.d/998-path-precedence.bashrc
     tests/container/run.sh
     tests/container/run-in-container.sh
     tests/macos/run.sh
