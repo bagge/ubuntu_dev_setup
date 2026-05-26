@@ -13,6 +13,7 @@
       - 002-bash_it.bashrc
       - 003-bazel-helpers.bashrc
       - 005-fzf.bashrc
+      - 006-nvim.bashrc
       - 006-nvm.bashrc
       - 007-golang.bashrc
     expected_local_bins:
@@ -162,6 +163,20 @@
         that:
           - git_editor.stdout == "nvim"
           - git_excludesfile.stdout == ansible_facts.env.HOME + "/.gitignore"
+
+    - name: Read interactive shell editor variables # noqa command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - bash
+          - -ic
+          - printf '%s\n%s\n' "${EDITOR:-}" "${VISUAL:-}"
+      changed_when: false
+      register: shell_editor_variables
+
+    - name: Assert interactive shell editor variables
+      ansible.builtin.assert:
+        that:
+          - shell_editor_variables.stdout_lines == ["nvim", "nvim"]
 
     - name: Read nvm version # noqa command-instead-of-module
       ansible.builtin.shell: |

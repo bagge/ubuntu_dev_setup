@@ -13,6 +13,7 @@ bash_files=(
     bashrc.d/003-bazel-helpers.bashrc
     bashrc.d/004-bash-history.bashrc
     bashrc.d/005-fzf.bashrc
+    bashrc.d/006-nvim.bashrc
     bashrc.d/006-nvm.bashrc
     bashrc.d/007-golang.bashrc
     bashrc.d/999-optional-auth.bashrc
