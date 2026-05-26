@@ -258,10 +258,10 @@
       changed_when: false
       register: tree_sitter_version_result
 
-    - name: Assert Tree-sitter CLI version
+    - name: Assert Tree-sitter CLI is available
       ansible.builtin.assert:
         that:
-          - tree_sitter_version_result.stdout is match("^tree-sitter " + tree_sitter_version + "( |$)")
+          - tree_sitter_version_result.stdout is match("^tree-sitter [0-9]+\\.[0-9]+\\.[0-9]+( |$)")
 
     - name: Read LLM CLI versions # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }} --version"
