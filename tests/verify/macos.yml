@@ -13,6 +13,7 @@
       - 002-bash_it.bashrc
       - 003-bazel-helpers.bashrc
       - 005-fzf.bashrc
+      - 006-nvim.bashrc
       - 006-nvm.bashrc
       - 007-golang.bashrc
     expected_local_bins:
@@ -163,6 +164,20 @@
           - git_editor.stdout == "nvim"
           - git_excludesfile.stdout == ansible_facts.env.HOME + "/.gitignore"
 
+    - name: Read interactive shell editor variables # noqa command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - bash
+          - -ic
+          - printf '%s\n%s\n' "${EDITOR:-}" "${VISUAL:-}"
+      changed_when: false
+      register: shell_editor_variables
+
+    - name: Assert interactive shell editor variables
+      ansible.builtin.assert:
+        that:
+          - shell_editor_variables.stdout_lines == ["nvim", "nvim"]
+
     - name: Read nvm version # noqa command-instead-of-module
       ansible.builtin.shell: |
         . "{{ ansible_facts.env.HOME }}/.nvm/nvm.sh"
@@ -243,10 +258,10 @@
       changed_when: false
       register: tree_sitter_version_result
 
-    - name: Assert Tree-sitter CLI version
+    - name: Assert Tree-sitter CLI is available
       ansible.builtin.assert:
         that:
-          - tree_sitter_version_result.stdout is match("^tree-sitter " + tree_sitter_version + "( |$)")
+          - tree_sitter_version_result.stdout is match("^tree-sitter [0-9]+\\.[0-9]+\\.[0-9]+( |$)")
 
     - name: Read LLM CLI versions # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }} --version"

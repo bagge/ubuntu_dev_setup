@@ -97,6 +97,14 @@
         scope: global
         value: nvim
 
+    - name: Enable nvim bashrc snippet
+      ansible.builtin.file:
+        src: "{{ inventory_dir }}/bashrc.d/{{ item }}"
+        dest: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
+        state: link
+      with_items:
+        - "006-nvim.bashrc"
+
     - name: Download PlantUML jar
       ansible.builtin.get_url:
         url: "https://github.com/plantuml/plantuml/releases/download/v{{ plantuml_version }}/{{ plantuml_jar_name }}"
