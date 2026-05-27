@@ -49,6 +49,7 @@ sudo -H -u devtester env \
     ansible-playbook setup.yml --tags gnome-customization,kitty --extra-vars "${TEST_EXTRA_VARS} run_desktop_customization=true" | tee /tmp/headless-desktop.log
     grep -F "Skipping Ubuntu GNOME customization because no usable graphical GNOME session was detected." /tmp/headless-desktop.log
     ansible-playbook tests/verify/guarded-links.yml
+    ansible-playbook tests/verify/google-chrome-apt-source.yml
     ansible-playbook tests/verify/container.yml --extra-vars "${TEST_EXTRA_VARS}"
     ansible-playbook setup.yml --extra-vars "${TEST_EXTRA_VARS}" | tee /tmp/ansible-second-run.log
     python3 tests/assert_ansible_recap.py /tmp/ansible-second-run.log --changed 0 --failed 0
