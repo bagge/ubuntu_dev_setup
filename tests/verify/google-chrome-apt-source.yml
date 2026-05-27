@@ -1,0 +1,144 @@
+---
+- name: Verify Google Chrome apt source handling
+  hosts: localhost
+  gather_facts: false
+  vars:
+    google_chrome_test_root: /tmp/ubuntu-dev-setup-google-chrome-apt-source
+    google_chrome_apt_list_path: "{{ google_chrome_test_root }}/sources.list.d/google-chrome.list"
+    google_chrome_apt_sources_path: "{{ google_chrome_test_root }}/sources.list.d/google-chrome.sources"
+    google_chrome_default_path: "{{ google_chrome_test_root }}/default/google-chrome"
+    google_chrome_keyring_path: "{{ google_chrome_test_root }}/keyrings/google-chrome.gpg"
+    google_chrome_apt_repo: >-
+      deb [arch=amd64 signed-by={{ google_chrome_keyring_path }}]
+      https://dl.google.com/linux/chrome/deb/ stable main
+    google_chrome_apt_repo_line_pattern: >-
+      ^\s*deb\s+(\[[^]]*\]\s+)?https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
+    google_chrome_signed_apt_repo_line_pattern: >-
+      ^\s*deb\s+\[[^]]*signed-by=[^]]*\]\s+https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
+    google_chrome_unsigned_repo_line: >-
+      deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main
+    google_chrome_signed_repo_line: >-
+      deb [arch=amd64 signed-by={{ google_chrome_keyring_path }}]
+      https://dl.google.com/linux/chrome/deb/ stable main
+    google_chrome_apt_source_become: false
+    install_google_chrome: false
+  tasks:
+    - name: Reset Google Chrome apt source test root
+      ansible.builtin.file:
+        path: "{{ google_chrome_test_root }}"
+        state: absent
+
+    - name: Create Google Chrome apt source test directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ google_chrome_test_root }}/default"
+        - "{{ google_chrome_test_root }}/keyrings"
+        - "{{ google_chrome_test_root }}/sources.list.d"
+
+    - name: Create unsigned Google Chrome apt repository list
+      ansible.builtin.copy:
+        dest: "{{ google_chrome_apt_list_path }}"
+        content: |
+          ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+          # You may comment out this entry, but any other modifications may be lost.
+          {{ google_chrome_unsigned_repo_line }}
+        mode: "0644"
+
+    - name: Manage unsigned Google Chrome apt repository list
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/google-chrome-apt-source.yml"
+
+    - name: Read preserved unsigned Google Chrome apt repository list
+      ansible.builtin.slurp:
+        src: "{{ google_chrome_apt_list_path }}"
+      register: google_chrome_preserved_unsigned_list
+
+    - name: Check Google Chrome apt defaults after preserving unsigned source
+      ansible.builtin.stat:
+        path: "{{ google_chrome_default_path }}"
+      register: google_chrome_preserved_default
+
+    - name: Assert unsigned Google Chrome apt repository list was preserved
+      ansible.builtin.assert:
+        that:
+          - google_chrome_preserved_unsigned_content == google_chrome_expected_unsigned_content
+          - not google_chrome_preserved_default.stat.exists
+      vars:
+        google_chrome_preserved_unsigned_content: >-
+          {{ google_chrome_preserved_unsigned_list.content | b64decode }}
+        google_chrome_expected_unsigned_content: |
+          ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+          # You may comment out this entry, but any other modifications may be lost.
+          {{ google_chrome_unsigned_repo_line }}
+
+    - name: Reset Google Chrome apt source test root before mixed source test
+      ansible.builtin.file:
+        path: "{{ google_chrome_test_root }}"
+        state: absent
+
+    - name: Recreate Google Chrome apt source test directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ google_chrome_test_root }}/default"
+        - "{{ google_chrome_test_root }}/keyrings"
+        - "{{ google_chrome_test_root }}/sources.list.d"
+
+    - name: Create mixed Google Chrome apt repository list
+      ansible.builtin.copy:
+        dest: "{{ google_chrome_apt_list_path }}"
+        content: |
+          ### THIS FILE IS MANAGED BY ANSIBLE ###
+          {{ google_chrome_signed_repo_line }}
+          ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+          # You may comment out this entry, but any other modifications may be lost.
+          {{ google_chrome_unsigned_repo_line }}
+        mode: "0644"
+
+    - name: Create conflicting Google Chrome deb822 apt repository
+      ansible.builtin.copy:
+        dest: "{{ google_chrome_apt_sources_path }}"
+        content: |
+          Types: deb
+          URIs: https://dl.google.com/linux/chrome/deb/
+          Suites: stable
+          Components: main
+          Signed-By: {{ google_chrome_keyring_path }}
+        mode: "0644"
+
+    - name: Manage mixed Google Chrome apt repository list
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/google-chrome-apt-source.yml"
+
+    - name: Read repaired Google Chrome apt repository list
+      ansible.builtin.slurp:
+        src: "{{ google_chrome_apt_list_path }}"
+      register: google_chrome_repaired_list
+
+    - name: Check conflicting Google Chrome deb822 apt repository after repair
+      ansible.builtin.stat:
+        path: "{{ google_chrome_apt_sources_path }}"
+      register: google_chrome_repaired_sources
+
+    - name: Check Google Chrome apt defaults after mixed source repair
+      ansible.builtin.stat:
+        path: "{{ google_chrome_default_path }}"
+      register: google_chrome_repaired_default
+
+    - name: Assert mixed Google Chrome apt source was repaired
+      ansible.builtin.assert:
+        that:
+          - google_chrome_signed_repo_line not in google_chrome_repaired_content
+          - google_chrome_unsigned_repo_line in google_chrome_repaired_content
+          - not google_chrome_repaired_sources.stat.exists
+          - not google_chrome_repaired_default.stat.exists
+      vars:
+        google_chrome_repaired_content: "{{ google_chrome_repaired_list.content | b64decode }}"
+
+    - name: Remove Google Chrome apt source test root
+      ansible.builtin.file:
+        path: "{{ google_chrome_test_root }}"
+        state: absent
