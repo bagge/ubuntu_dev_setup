@@ -30,6 +30,7 @@ for file in "${bash_files[@]}"; do
 done
 
 python3 -m py_compile tools/sync_versions.py
+python3 -m py_compile kitty-tab-bar.py
 python3 -m unittest tests/test_sync_versions.py
 bash tests/vm/run.sh --help >/dev/null
 

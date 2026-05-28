@@ -59,6 +59,30 @@
           - bashrc_d_link.stat.islnk
           - bashrc_d_link.stat.lnk_source == inventory_dir + "/bashrc.d"
 
+    - name: Check managed kitty configuration symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.config/kitty/kitty.conf"
+      register: kitty_config_link
+
+    - name: Check managed kitty tab bar renderer symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.config/kitty/tab_bar.py"
+      register: kitty_tab_bar_link
+
+    - name: Read kitty configuration
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts.env.HOME }}/.config/kitty/kitty.conf"
+      register: kitty_config
+
+    - name: Assert kitty links point into the test workspace
+      ansible.builtin.assert:
+        that:
+          - kitty_config_link.stat.islnk
+          - kitty_config_link.stat.lnk_source == inventory_dir + "/kitty.conf"
+          - kitty_tab_bar_link.stat.islnk
+          - kitty_tab_bar_link.stat.lnk_source == inventory_dir + "/kitty-tab-bar.py"
+          - "'tab_bar_style custom' in (kitty_config.content | b64decode).splitlines()"
+
     - name: Check enabled bash snippets
       ansible.builtin.stat:
         path: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
