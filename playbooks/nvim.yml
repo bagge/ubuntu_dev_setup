@@ -220,6 +220,32 @@
         or 'updated' in rust_stable_toolchain.stderr
       when: dev_setup_platform == 'ubuntu'
 
+    - name: Read installed vale-ls version on Ubuntu 22.04 # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/vale-ls --version"
+      register: vale_ls_installed_version
+      changed_when: false
+      failed_when: false
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ansible_facts.distribution_version == '22.04'
+
+    - name: Install vale-ls on Ubuntu 22.04
+      ansible.builtin.command: >
+        {{ ansible_facts.env.HOME }}/.cargo/bin/cargo +stable install
+        --git https://github.com/vale-cli/vale-ls
+        --tag v{{ vale_ls_version }}
+        --locked
+        --root {{ ansible_facts.env.HOME }}/.local
+        --force
+      environment:
+        CARGO_HOME: "{{ ansible_facts.env.HOME }}/.cargo"
+        RUSTUP_HOME: "{{ ansible_facts.env.HOME }}/.rustup"
+      changed_when: true
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ansible_facts.distribution_version == '22.04'
+        - vale_ls_installed_version.rc != 0 or vale_ls_version not in vale_ls_installed_version.stdout
+
     - name: Read installed tree-sitter CLI version on Ubuntu # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/tree-sitter --version"
       register: tree_sitter_cli_version
