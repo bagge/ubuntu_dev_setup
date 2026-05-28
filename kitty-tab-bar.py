@@ -2,6 +2,7 @@
 """Custom kitty tab bar styled to match the Neovim lualine/tabby setup."""
 
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -131,6 +132,16 @@ def memory_usage() -> str:
     return linux_memory_usage() or (macos_memory_usage() if sys.platform == "darwin" else None) or "--"
 
 
+def root_disk_usage() -> str:
+    try:
+        usage = shutil.disk_usage("/")
+    except OSError:
+        return "--"
+
+    used_percent = usage.used / usage.total * 100
+    return f"{used_percent:.0f}%"
+
+
 def linux_network_totals() -> tuple[int, int] | None:
     try:
         with open("/proc/net/dev", encoding="utf-8") as interfaces:
@@ -247,6 +258,7 @@ def status_cells() -> list[tuple[int, str]]:
     return [
         (DRACULA_PURPLE, metric_cell("LOAD", cpu_load(), 6)),
         (DRACULA_FOREGROUND, metric_cell("MEM", memory_usage(), 4)),
+        (DRACULA_FOREGROUND, metric_cell("DISK", root_disk_usage(), 4)),
         (DRACULA_COMMENT, metric_cell("↓", format_rate(rx_rate), 7)),
         (DRACULA_COMMENT, metric_cell("↑", format_rate(tx_rate), 7)),
     ]
