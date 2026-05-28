@@ -220,10 +220,18 @@
         or 'updated' in rust_stable_toolchain.stderr
       when: dev_setup_platform == 'ubuntu'
 
-    - name: Read installed vale-ls version on Ubuntu 22.04 # noqa command-instead-of-module
-      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/vale-ls --version"
-      register: vale_ls_installed_version
-      changed_when: false
+    - name: Check installed vale-ls binary on Ubuntu 22.04
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.local/bin/vale-ls"
+      register: vale_ls_binary
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ansible_facts.distribution_version == '22.04'
+
+    - name: Read installed vale-ls version marker on Ubuntu 22.04
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts.env.HOME }}/.local/.vale-ls-version"
+      register: vale_ls_version_marker
       failed_when: false
       when:
         - dev_setup_platform == 'ubuntu'
@@ -244,7 +252,19 @@
       when:
         - dev_setup_platform == 'ubuntu'
         - ansible_facts.distribution_version == '22.04'
-        - vale_ls_installed_version.rc != 0 or vale_ls_version not in vale_ls_installed_version.stdout
+        - >-
+          not vale_ls_binary.stat.exists
+          or vale_ls_version_marker.content is not defined
+          or (vale_ls_version_marker.content | b64decode | trim) != vale_ls_version
+
+    - name: Write vale-ls version marker on Ubuntu 22.04
+      ansible.builtin.copy:
+        content: "{{ vale_ls_version }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/.vale-ls-version"
+        mode: "0644"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - ansible_facts.distribution_version == '22.04'
 
     - name: Read installed tree-sitter CLI version on Ubuntu # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/tree-sitter --version"
