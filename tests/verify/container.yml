@@ -30,6 +30,8 @@
       - plantuml
       - repo
       - tree-sitter
+    expected_ubuntu_2204_local_bins:
+      - vale-ls
     expected_llm_cli_bins:
       - codex
       - copilot
@@ -75,7 +77,16 @@
     - name: Check expected local binaries
       ansible.builtin.stat:
         path: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }}"
-      loop: "{{ expected_local_bins + (expected_llm_cli_bins if install_llm_clis | bool else []) }}"
+      loop: >-
+        {{
+          expected_local_bins
+          + (
+            expected_ubuntu_2204_local_bins
+            if ansible_facts.distribution_version == '22.04'
+            else []
+          )
+          + (expected_llm_cli_bins if install_llm_clis | bool else [])
+        }}
       register: local_bins
 
     - name: Assert expected local binaries exist
@@ -322,6 +333,25 @@
       ansible.builtin.assert:
         that:
           - tree_sitter_version_result.stdout is match("^tree-sitter " + tree_sitter_version + "( |$)")
+
+    - name: Read vale-ls version on Ubuntu 22.04 # noqa command-instead-of-module
+      ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/vale-ls --version"
+      changed_when: false
+      register: vale_ls_version_result
+      when: ansible_facts.distribution_version == '22.04'
+
+    - name: Read vale-ls version marker on Ubuntu 22.04
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts.env.HOME }}/.local/.vale-ls-version"
+      register: vale_ls_version_marker
+      when: ansible_facts.distribution_version == '22.04'
+
+    - name: Assert vale-ls installation on Ubuntu 22.04
+      ansible.builtin.assert:
+        that:
+          - vale_ls_version_result.stdout | length > 0
+          - (vale_ls_version_marker.content | b64decode | trim) == vale_ls_version
+      when: ansible_facts.distribution_version == '22.04'
 
     - name: Read LLM CLI versions # noqa command-instead-of-module
       ansible.builtin.command: "{{ ansible_facts.env.HOME }}/.local/bin/{{ item }} --version"

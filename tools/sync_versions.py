@@ -310,6 +310,7 @@ SOURCES: tuple[Source, ...] = (
         ),
     ),
     Source("Tree-sitter", "tree_sitter_version", "github", "tree-sitter/tree-sitter", "v"),
+    Source("vale-ls", "vale_ls_version", "github", "vale-cli/vale-ls", "v"),
     Source(
         "toprepo",
         "toprepo_version",
