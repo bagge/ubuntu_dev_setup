@@ -133,6 +133,12 @@
         guarded_link_src: "{{ inventory_dir }}/kitty.conf"
         guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/kitty/kitty.conf"
 
+    - name: Install kitty tab bar renderer
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/kitty-tab-bar.py"
+        guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/kitty/tab_bar.py"
+
     - name: Link kitty installation on Ubuntu
       ansible.builtin.file:
         src: "{{ inventory_dir }}/tarballs/kitty.app"
