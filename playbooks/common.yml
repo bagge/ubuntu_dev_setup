@@ -30,10 +30,12 @@
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.PATH }}"
   tasks:
-    - name: Check if needrestart is installed
-      ansible.builtin.stat:
-        path: /etc/needrestart
-      register: needrestart_dir
+    - name: Create needrestart override directory on Ubuntu
+      become: true
+      ansible.builtin.file:
+        path: /etc/needrestart/conf.d
+        state: directory
+        mode: "0755"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Prevent needrestart from restarting xrdp during apt operations
@@ -44,10 +46,7 @@
           # Prevent automatic xrdp restarts which kill active RDP sessions
           $nrconf{override_rc}{qr(^xrdp)} = 0;
         mode: "0644"
-      when:
-        - dev_setup_platform == 'ubuntu'
-        - needrestart_dir.stat.isdir is defined
-        - needrestart_dir.stat.isdir
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Manage Google Chrome apt source on Ubuntu
       ansible.builtin.include_tasks: tasks/google-chrome-apt-source.yml
