@@ -122,6 +122,17 @@
           - kitty_tab_bar_link.stat.lnk_source == inventory_dir + "/kitty-tab-bar.py"
           - "'tab_bar_style custom' in (kitty_config.content | b64decode).splitlines()"
 
+    - name: Check managed Vale configuration symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/Library/Application Support/vale/.vale.ini"
+      register: vale_config_link
+
+    - name: Assert Vale configuration points into the workspace
+      ansible.builtin.assert:
+        that:
+          - vale_config_link.stat.islnk
+          - vale_config_link.stat.lnk_source == inventory_dir + "/vale.ini"
+
     - name: Check enabled bash snippets
       ansible.builtin.stat:
         path: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"

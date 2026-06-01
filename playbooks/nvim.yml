@@ -18,6 +18,8 @@
     plantuml_jar_name: "plantuml-{{ plantuml_version }}.jar"
     rustup_target: x86_64-unknown-linux-gnu
     rustup_init_name: "rustup-init-{{ rustup_version }}-{{ rustup_target }}"
+    vale_config_dir: >-
+      {{ ansible_facts.env.HOME }}/{{ 'Library/Application Support/vale' if dev_setup_platform == 'macos' else '.config/vale' }}
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.HOME }}/.cargo/bin:{{ ansible_facts.env.PATH }}"
   tasks:
@@ -90,6 +92,18 @@
       vars:
         guarded_link_src: "{{ inventory_dir }}/repos/nvim-config"
         guarded_link_dest: "{{ ansible_facts.env.HOME }}/.config/nvim"
+
+    - name: Create Vale config directory
+      ansible.builtin.file:
+        path: "{{ vale_config_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Link Vale configuration
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/vale.ini"
+        guarded_link_dest: "{{ vale_config_dir }}/.vale.ini"
 
     - name: Set nvim as default editor for git
       community.general.git_config:
