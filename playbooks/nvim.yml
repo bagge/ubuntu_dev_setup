@@ -68,6 +68,7 @@
         - default-jre
         - git
         - graphviz
+        - hunspell-sv-se
         - libclang-dev
         - python3-venv
         - ripgrep
