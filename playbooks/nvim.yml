@@ -22,6 +22,8 @@
       {{ ansible_facts.env.HOME }}/{{ 'Library/Application Support/vale' if dev_setup_platform == 'macos' else '.config/vale' }}
     vale_styles_dir: "{{ vale_config_dir }}/styles"
     vale_dictionary_dir: "{{ ansible_facts.env.HOME }}/.local/share/vale/dictionaries"
+    vale_vocabulary_dir: "{{ vale_styles_dir }}/config/vocabularies"
+    vale_user_vocabulary_dir: "{{ vale_vocabulary_dir }}/User"
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.HOME }}/.cargo/bin:{{ ansible_facts.env.PATH }}"
   tasks:
@@ -170,6 +172,34 @@
         path: "{{ vale_styles_dir }}"
         state: directory
         mode: "0755"
+
+    - name: Create Vale vocabulary directory
+      ansible.builtin.file:
+        path: "{{ vale_vocabulary_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Check User Vale vocabulary path
+      ansible.builtin.stat:
+        path: "{{ vale_user_vocabulary_dir }}"
+        follow: false
+      register: vale_user_vocabulary_path
+
+    - name: Create local User Vale vocabulary directory
+      ansible.builtin.file:
+        path: "{{ vale_user_vocabulary_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Create local User Vale vocabulary files
+      ansible.builtin.copy:
+        content: ""
+        dest: "{{ vale_user_vocabulary_dir }}/{{ item }}"
+        force: false
+        mode: "0600"
+      with_items:
+        - accept.txt
+        - reject.txt
 
     - name: Link Swedish Vale style
       ansible.builtin.include_tasks: tasks/guarded-link.yml

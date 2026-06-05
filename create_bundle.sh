@@ -12,6 +12,7 @@ FILE_LIST=(
     ".ssh"
     ".config/google-chrome/Default/Bookmarks"
     ".config/opencode/opencode.json"
+    ".config/vale/styles/config/vocabularies/User"
 )
 
 OUTPUT_FILE="sensitive-transfer-bundle.tar.gz"
