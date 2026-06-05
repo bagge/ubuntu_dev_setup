@@ -1,0 +1,6 @@
+extends: spelling
+message: "'%s' verkar vara felstavat."
+level: warning
+dicpath: dictionaries
+dictionaries:
+  - mixed_en_sv
