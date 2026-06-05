@@ -20,6 +20,8 @@
     rustup_init_name: "rustup-init-{{ rustup_version }}-{{ rustup_target }}"
     vale_config_dir: >-
       {{ ansible_facts.env.HOME }}/{{ 'Library/Application Support/vale' if dev_setup_platform == 'macos' else '.config/vale' }}
+    vale_styles_dir: "{{ vale_config_dir }}/styles"
+    vale_dictionary_dir: "{{ ansible_facts.env.HOME }}/.local/share/vale/dictionaries"
   environment:
     PATH: "{{ homebrew_prefix }}/bin:{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.HOME }}/.cargo/bin:{{ ansible_facts.env.PATH }}"
   tasks:
@@ -68,11 +70,59 @@
         - default-jre
         - git
         - graphviz
-        - hunspell-sv-se
+        - hunspell-en-us
+        - hunspell-sv
+        - hunspell-tools
         - libclang-dev
         - python3-venv
         - ripgrep
         - wl-clipboard
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Create Vale dictionary directory
+      ansible.builtin.file:
+        path: "{{ vale_dictionary_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Generate mixed English and Swedish Hunspell dictionary on Ubuntu
+      ansible.builtin.shell: |
+        set -euo pipefail
+
+        tmpdir="$(mktemp -d)"
+        trap 'rm -rf "${tmpdir}"' EXIT
+
+        unmunch /usr/share/hunspell/en_US.dic /usr/share/hunspell/en_US.aff > "${tmpdir}/en_flat.txt" 2>/dev/null
+        unmunch /usr/share/hunspell/sv_SE.dic /usr/share/hunspell/sv_SE.aff > "${tmpdir}/sv_flat.txt" 2>/dev/null
+        LC_ALL=C sort -u "${tmpdir}/en_flat.txt" "${tmpdir}/sv_flat.txt" > "${tmpdir}/words.txt"
+
+        word_count="$(wc -l < "${tmpdir}/words.txt" | tr -d ' ')"
+        {
+          printf '%s\n' "${word_count}"
+          cat "${tmpdir}/words.txt"
+        } > "${tmpdir}/mixed_en_sv.dic"
+        : > "${tmpdir}/mixed_en_sv.aff"
+
+        changed=0
+        if [ ! -f "{{ vale_dictionary_dir }}/mixed_en_sv.dic" ] \
+          || ! cmp -s "${tmpdir}/mixed_en_sv.dic" "{{ vale_dictionary_dir }}/mixed_en_sv.dic"; then
+          install -m 0644 "${tmpdir}/mixed_en_sv.dic" "{{ vale_dictionary_dir }}/mixed_en_sv.dic"
+          changed=1
+        fi
+
+        if [ ! -f "{{ vale_dictionary_dir }}/mixed_en_sv.aff" ] \
+          || ! cmp -s "${tmpdir}/mixed_en_sv.aff" "{{ vale_dictionary_dir }}/mixed_en_sv.aff"; then
+          install -m 0644 "${tmpdir}/mixed_en_sv.aff" "{{ vale_dictionary_dir }}/mixed_en_sv.aff"
+          changed=1
+        fi
+
+        if [ "${changed}" -eq 1 ]; then
+          echo "__vale_dictionary_changed__"
+        fi
+      args:
+        executable: /bin/bash
+      register: vale_dictionary_generation
+      changed_when: "'__vale_dictionary_changed__' in vale_dictionary_generation.stdout"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Install packages used by nvim on macOS
@@ -99,6 +149,39 @@
         path: "{{ vale_config_dir }}"
         state: directory
         mode: "0755"
+
+    - name: Check Vale styles path
+      ansible.builtin.stat:
+        path: "{{ vale_styles_dir }}"
+        follow: false
+      register: vale_styles_path
+
+    - name: Remove legacy managed Vale styles symlink
+      ansible.builtin.file:
+        path: "{{ vale_styles_dir }}"
+        state: absent
+      when:
+        - vale_styles_path.stat.islnk is defined
+        - vale_styles_path.stat.islnk
+        - vale_styles_path.stat.lnk_source == inventory_dir + "/styles"
+
+    - name: Create Vale styles directory
+      ansible.builtin.file:
+        path: "{{ vale_styles_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Link Swedish Vale style
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ inventory_dir }}/styles/Swedish"
+        guarded_link_dest: "{{ vale_styles_dir }}/Swedish"
+
+    - name: Link Vale dictionaries into StylesPath
+      ansible.builtin.include_tasks: tasks/guarded-link.yml
+      vars:
+        guarded_link_src: "{{ vale_dictionary_dir }}"
+        guarded_link_dest: "{{ vale_styles_dir }}/dictionaries"
 
     - name: Link Vale configuration
       ansible.builtin.include_tasks: tasks/guarded-link.yml

@@ -94,6 +94,57 @@
           - vale_config_link.stat.islnk
           - vale_config_link.stat.lnk_source == inventory_dir + "/vale.ini"
 
+    - name: Check managed Swedish Vale style symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.config/vale/styles/Swedish"
+      register: vale_swedish_style_link
+
+    - name: Check managed Vale dictionary symlink
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.config/vale/styles/dictionaries"
+      register: vale_dictionary_link
+
+    - name: Check generated mixed Vale dictionary
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.local/share/vale/dictionaries/mixed_en_sv.dic"
+      register: vale_mixed_dictionary
+
+    - name: Check generated mixed Vale affix file
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.local/share/vale/dictionaries/mixed_en_sv.aff"
+      register: vale_mixed_affix
+
+    - name: Read mixed Vale dictionary word count # noqa command-instead-of-module
+      ansible.builtin.command: >-
+        head -n 1
+        {{ ansible_facts.env.HOME }}/.local/share/vale/dictionaries/mixed_en_sv.dic
+      changed_when: false
+      register: vale_mixed_dictionary_count
+
+    - name: Check mixed Vale dictionary sample words # noqa command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - awk
+          - >-
+            $0 == "hej" { hej = 1 }
+            $0 == "kolla" { kolla = 1 }
+            END { exit !(hej && kolla) }
+          - "{{ ansible_facts.env.HOME }}/.local/share/vale/dictionaries/mixed_en_sv.dic"
+      changed_when: false
+
+    - name: Assert Vale style and mixed dictionary setup
+      ansible.builtin.assert:
+        that:
+          - vale_swedish_style_link.stat.islnk
+          - vale_swedish_style_link.stat.lnk_source == inventory_dir + "/styles/Swedish"
+          - vale_dictionary_link.stat.islnk
+          - vale_dictionary_link.stat.lnk_source == ansible_facts.env.HOME + "/.local/share/vale/dictionaries"
+          - vale_mixed_dictionary.stat.exists
+          - vale_mixed_dictionary.stat.size > 0
+          - vale_mixed_affix.stat.exists
+          - vale_mixed_affix.stat.size == 0
+          - vale_mixed_dictionary_count.stdout is match("^[0-9]+$")
+
     - name: Check enabled bash snippets
       ansible.builtin.stat:
         path: "{{ inventory_dir }}/bashrc.d/enabled/{{ item }}"
@@ -143,6 +194,9 @@
         - default-jre
         - git
         - graphviz
+        - hunspell-en-us
+        - hunspell-sv
+        - hunspell-tools
         - jq
         - python3-pip
         - python3-psutil
