@@ -4,31 +4,43 @@
   gather_facts: false
   vars:
     google_chrome_test_root: /tmp/ubuntu-dev-setup-google-chrome-apt-source
+    google_chrome_test_key_fixture: /tmp/ubuntu-dev-setup-google-chrome-signing-key.asc
     google_chrome_apt_list_path: "{{ google_chrome_test_root }}/sources.list.d/google-chrome.list"
     google_chrome_apt_sources_path: "{{ google_chrome_test_root }}/sources.list.d/google-chrome.sources"
     google_chrome_default_path: "{{ google_chrome_test_root }}/default/google-chrome"
-    google_chrome_keyring_path: "{{ google_chrome_test_root }}/keyrings/google-chrome.gpg"
-    google_chrome_apt_repo: >-
-      deb [arch=amd64 signed-by={{ google_chrome_keyring_path }}]
-      https://dl.google.com/linux/chrome/deb/ stable main
-    google_chrome_apt_repo_line_pattern: >-
-      ^\s*deb\s+(\[[^]]*\]\s+)?https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
-    google_chrome_signed_apt_repo_line_pattern: >-
-      ^\s*deb\s+\[[^]]*signed-by=[^]]*\]\s+https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
-    google_chrome_unsigned_repo_line: >-
-      deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main
-    google_chrome_signed_repo_line: >-
-      deb [arch=amd64 signed-by={{ google_chrome_keyring_path }}]
-      https://dl.google.com/linux/chrome/deb/ stable main
+    google_chrome_keyring_path: "{{ google_chrome_test_root }}/keyrings/google-chrome.asc"
+    google_chrome_legacy_keyring_path: "{{ google_chrome_test_root }}/keyrings/google-chrome.gpg"
+    google_chrome_signing_key_url: "file://{{ google_chrome_test_key_fixture }}"
     google_chrome_apt_source_become: false
     install_google_chrome: false
+    google_chrome_unsigned_repo_line: >-
+      deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main
+    google_chrome_expected_source: |
+      Types: deb
+      URIs: https://dl.google.com/linux/chrome/deb/
+      Suites: stable
+      Components: main
+      Architectures: amd64
+      Signed-By: {{ google_chrome_keyring_path }}
+    google_chrome_expected_defaults: |
+      repo_add_once="false"
+      repo_reenable_on_distupgrade="false"
   tasks:
+    - name: Create Google Chrome signing key fixture
+      ansible.builtin.copy:
+        dest: "{{ google_chrome_test_key_fixture }}"
+        content: |
+          -----BEGIN PGP PUBLIC KEY BLOCK-----
+          test-key-fixture
+          -----END PGP PUBLIC KEY BLOCK-----
+        mode: "0644"
+
     - name: Reset Google Chrome apt source test root
       ansible.builtin.file:
         path: "{{ google_chrome_test_root }}"
         state: absent
 
-    - name: Create Google Chrome apt source test directories
+    - name: Create disabled Chrome test directories
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -38,47 +50,103 @@
         - "{{ google_chrome_test_root }}/keyrings"
         - "{{ google_chrome_test_root }}/sources.list.d"
 
-    - name: Create unsigned Google Chrome apt repository list
+    - name: Create Chrome files that must remain untouched when disabled
       ansible.builtin.copy:
-        dest: "{{ google_chrome_apt_list_path }}"
-        content: |
-          ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
-          # You may comment out this entry, but any other modifications may be lost.
-          {{ google_chrome_unsigned_repo_line }}
+        dest: "{{ item.dest }}"
+        content: "{{ item.content }}"
         mode: "0644"
+      loop:
+        - dest: "{{ google_chrome_apt_list_path }}"
+          content: |
+            ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+            {{ google_chrome_unsigned_repo_line }}
+        - dest: "{{ google_chrome_apt_sources_path }}"
+          content: |
+            vendor-managed-source
+        - dest: "{{ google_chrome_legacy_keyring_path }}"
+          content: |
+            legacy-key
 
-    - name: Manage unsigned Google Chrome apt repository list
+    - name: Skip Google Chrome apt source management when disabled
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/google-chrome-apt-source.yml"
+      when: install_google_chrome | bool
 
-    - name: Read preserved unsigned Google Chrome apt repository list
+    - name: Read disabled Chrome files
       ansible.builtin.slurp:
-        src: "{{ google_chrome_apt_list_path }}"
-      register: google_chrome_preserved_unsigned_list
+        src: "{{ item }}"
+      loop:
+        - "{{ google_chrome_apt_list_path }}"
+        - "{{ google_chrome_apt_sources_path }}"
+        - "{{ google_chrome_legacy_keyring_path }}"
+      register: google_chrome_disabled_files
 
-    - name: Check Google Chrome apt defaults after preserving unsigned source
+    - name: Check managed Chrome files after disabled scenario
       ansible.builtin.stat:
-        path: "{{ google_chrome_default_path }}"
-      register: google_chrome_preserved_default
+        path: "{{ item }}"
+      loop:
+        - "{{ google_chrome_keyring_path }}"
+        - "{{ google_chrome_default_path }}"
+      register: google_chrome_disabled_managed_files
 
-    - name: Assert unsigned Google Chrome apt repository list was preserved
+    - name: Assert disabled Chrome state was untouched
       ansible.builtin.assert:
         that:
-          - google_chrome_preserved_unsigned_content == google_chrome_expected_unsigned_content
-          - not google_chrome_preserved_default.stat.exists
+          - (google_chrome_disabled_files.results[0].content | b64decode) == google_chrome_disabled_list
+          - (google_chrome_disabled_files.results[1].content | b64decode) == "vendor-managed-source\n"
+          - (google_chrome_disabled_files.results[2].content | b64decode) == "legacy-key\n"
+          - not google_chrome_disabled_managed_files.results[0].stat.exists
+          - not google_chrome_disabled_managed_files.results[1].stat.exists
       vars:
-        google_chrome_preserved_unsigned_content: >-
-          {{ google_chrome_preserved_unsigned_list.content | b64decode }}
-        google_chrome_expected_unsigned_content: |
+        google_chrome_disabled_list: |
           ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
-          # You may comment out this entry, but any other modifications may be lost.
           {{ google_chrome_unsigned_repo_line }}
 
-    - name: Reset Google Chrome apt source test root before mixed source test
+    - name: Reset test root before fresh Chrome setup
       ansible.builtin.file:
         path: "{{ google_chrome_test_root }}"
         state: absent
 
-    - name: Recreate Google Chrome apt source test directories
+    - name: Create fresh Chrome test directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ google_chrome_test_root }}/default"
+        - "{{ google_chrome_test_root }}/sources.list.d"
+
+    - name: Manage fresh Google Chrome apt source
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/google-chrome-apt-source.yml"
+      vars:
+        install_google_chrome: true
+
+    - name: Read fresh managed Chrome files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      loop:
+        - "{{ google_chrome_apt_sources_path }}"
+        - "{{ google_chrome_keyring_path }}"
+        - "{{ google_chrome_default_path }}"
+      register: google_chrome_fresh_files
+
+    - name: Assert fresh Chrome source was created
+      ansible.builtin.assert:
+        that:
+          - (google_chrome_fresh_files.results[0].content | b64decode) == google_chrome_expected_source
+          - (google_chrome_fresh_files.results[1].content | b64decode) == google_chrome_key_fixture_content
+          - (google_chrome_fresh_files.results[2].content | b64decode) == google_chrome_expected_defaults
+      vars:
+        google_chrome_key_fixture_content: |
+          -----BEGIN PGP PUBLIC KEY BLOCK-----
+          test-key-fixture
+          -----END PGP PUBLIC KEY BLOCK-----
+
+    - name: Reset test root before legacy Chrome migration
+      ansible.builtin.file:
+        path: "{{ google_chrome_test_root }}"
+        state: absent
+
+    - name: Create legacy Chrome test directories
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -88,57 +156,86 @@
         - "{{ google_chrome_test_root }}/keyrings"
         - "{{ google_chrome_test_root }}/sources.list.d"
 
-    - name: Create mixed Google Chrome apt repository list
+    - name: Create legacy Chrome repository state
       ansible.builtin.copy:
-        dest: "{{ google_chrome_apt_list_path }}"
-        content: |
-          ### THIS FILE IS MANAGED BY ANSIBLE ###
-          {{ google_chrome_signed_repo_line }}
-          ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
-          # You may comment out this entry, but any other modifications may be lost.
-          {{ google_chrome_unsigned_repo_line }}
+        dest: "{{ item.dest }}"
+        content: "{{ item.content }}"
         mode: "0644"
+      loop:
+        - dest: "{{ google_chrome_apt_list_path }}"
+          content: |
+            ### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+            {{ google_chrome_unsigned_repo_line }}
+        - dest: "{{ google_chrome_apt_sources_path }}"
+          content: |
+            Types: deb
+            URIs: https://example.invalid/chrome/
+            Suites: legacy
+            Components: main
+        - dest: "{{ google_chrome_legacy_keyring_path }}"
+          content: |
+            legacy-key
 
-    - name: Create conflicting Google Chrome deb822 apt repository
-      ansible.builtin.copy:
-        dest: "{{ google_chrome_apt_sources_path }}"
-        content: |
-          Types: deb
-          URIs: https://dl.google.com/linux/chrome/deb/
-          Suites: stable
-          Components: main
-          Signed-By: {{ google_chrome_keyring_path }}
-        mode: "0644"
-
-    - name: Manage mixed Google Chrome apt repository list
+    - name: Migrate legacy Google Chrome apt source
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/google-chrome-apt-source.yml"
+      vars:
+        install_google_chrome: true
 
-    - name: Read repaired Google Chrome apt repository list
+    - name: Check legacy Chrome files after migration
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ google_chrome_apt_list_path }}"
+        - "{{ google_chrome_legacy_keyring_path }}"
+      register: google_chrome_legacy_files
+
+    - name: Read migrated Chrome files before second run
+      ansible.builtin.stat:
+        path: "{{ item }}"
+        checksum_algorithm: sha256
+      loop:
+        - "{{ google_chrome_apt_sources_path }}"
+        - "{{ google_chrome_keyring_path }}"
+        - "{{ google_chrome_default_path }}"
+      register: google_chrome_migrated_files_before
+
+    - name: Reapply managed Google Chrome apt source
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../playbooks/tasks/google-chrome-apt-source.yml"
+      vars:
+        install_google_chrome: true
+
+    - name: Read migrated Chrome files after second run
+      ansible.builtin.stat:
+        path: "{{ item }}"
+        checksum_algorithm: sha256
+      loop:
+        - "{{ google_chrome_apt_sources_path }}"
+        - "{{ google_chrome_keyring_path }}"
+        - "{{ google_chrome_default_path }}"
+      register: google_chrome_migrated_files_after
+
+    - name: Read migrated Chrome source
       ansible.builtin.slurp:
-        src: "{{ google_chrome_apt_list_path }}"
-      register: google_chrome_repaired_list
+        src: "{{ google_chrome_apt_sources_path }}"
+      register: google_chrome_migrated_source
 
-    - name: Check conflicting Google Chrome deb822 apt repository after repair
-      ansible.builtin.stat:
-        path: "{{ google_chrome_apt_sources_path }}"
-      register: google_chrome_repaired_sources
-
-    - name: Check Google Chrome apt defaults after mixed source repair
-      ansible.builtin.stat:
-        path: "{{ google_chrome_default_path }}"
-      register: google_chrome_repaired_default
-
-    - name: Assert mixed Google Chrome apt source was repaired
+    - name: Assert legacy Chrome state was migrated idempotently
       ansible.builtin.assert:
         that:
-          - google_chrome_signed_repo_line not in google_chrome_repaired_content
-          - google_chrome_unsigned_repo_line in google_chrome_repaired_content
-          - not google_chrome_repaired_sources.stat.exists
-          - not google_chrome_repaired_default.stat.exists
+          - not google_chrome_legacy_files.results[0].stat.exists
+          - not google_chrome_legacy_files.results[1].stat.exists
+          - (google_chrome_migrated_source.content | b64decode) == google_chrome_expected_source
+          - google_chrome_migrated_checksums_before == google_chrome_migrated_checksums_after
       vars:
-        google_chrome_repaired_content: "{{ google_chrome_repaired_list.content | b64decode }}"
+        google_chrome_migrated_checksums_before: >-
+          {{ google_chrome_migrated_files_before.results | map(attribute='stat.checksum') | list }}
+        google_chrome_migrated_checksums_after: >-
+          {{ google_chrome_migrated_files_after.results | map(attribute='stat.checksum') | list }}
 
-    - name: Remove Google Chrome apt source test root
+    - name: Remove Google Chrome apt source test files
       ansible.builtin.file:
-        path: "{{ google_chrome_test_root }}"
+        path: "{{ item }}"
         state: absent
+      loop:
+        - "{{ google_chrome_test_root }}"
+        - "{{ google_chrome_test_key_fixture }}"

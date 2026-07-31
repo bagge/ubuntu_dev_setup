@@ -4,16 +4,11 @@
   tags: common
   vars:
     google_chrome_apt_list_path: /etc/apt/sources.list.d/google-chrome.list
-    google_chrome_apt_repo: >-
-      deb [arch=amd64 signed-by={{ google_chrome_keyring_path }}]
-      https://dl.google.com/linux/chrome/deb/ stable main
-    google_chrome_apt_repo_line_pattern: >-
-      ^\s*deb\s+(\[[^]]*\]\s+)?https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
-    google_chrome_signed_apt_repo_line_pattern: >-
-      ^\s*deb\s+\[[^]]*signed-by=[^]]*\]\s+https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
     google_chrome_apt_sources_path: /etc/apt/sources.list.d/google-chrome.sources
     google_chrome_default_path: /etc/default/google-chrome
-    google_chrome_keyring_path: /usr/share/keyrings/google-chrome.gpg
+    google_chrome_keyring_path: /etc/apt/keyrings/google-chrome.asc
+    google_chrome_legacy_keyring_path: /usr/share/keyrings/google-chrome.gpg
+    google_chrome_signing_key_url: https://dl.google.com/linux/linux_signing_key.pub
     macos_common_formulae:
       - bash
       - bmon
@@ -50,7 +45,9 @@
 
     - name: Manage Google Chrome apt source on Ubuntu
       ansible.builtin.include_tasks: tasks/google-chrome-apt-source.yml
-      when: dev_setup_platform == 'ubuntu'
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - install_google_chrome | bool
 
     - name: Install python3-psutil (needed by dconf module)
       become: true

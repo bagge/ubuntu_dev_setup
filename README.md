@@ -25,6 +25,9 @@ $ ansible-playbook setup.yml --extra-vars install_docker=false
 $ ansible-playbook setup.yml --extra-vars "install_docker=false install_google_chrome=false install_omnissa_horizon=false install_llm_clis=false"
 ```
 
+When `install_google_chrome=false`, the playbook leaves existing Chrome package,
+APT source, signing key, and updater configuration untouched.
+
 Dotfile links are guarded by default. If an unmanaged target such as `.bashrc`
 already exists, the playbook fails instead of replacing it. To allow replacement
 after reviewing the file, run:
@@ -41,8 +44,15 @@ $ ansible-playbook setup.yml --extra-vars "replace_existing_dotfiles=true backup
 ```
 
 Supported platforms:
-- Ubuntu on amd64
+- Ubuntu 22.04, 24.04, and 26.04 on amd64
 - macOS on Apple Silicon
+
+Other Ubuntu releases fail during preflight because they are not covered by the
+integration matrix. To intentionally run without tested release support, use:
+
+```bash
+$ ansible-playbook setup.yml --extra-vars allow_unsupported_ubuntu_version=true
+```
 
 On macOS, Homebrew is installed automatically when it is missing. The default
 Homebrew prefix is `/opt/homebrew`.
@@ -52,7 +62,7 @@ Homebrew prefix is `/opt/homebrew`.
 The repository includes a containerized test harness so playbook changes can be
 tested without changing the local workstation setup.
 
-Run the default Ubuntu 24.04 container test:
+Run the default Ubuntu 26.04 container test:
 
 ```bash
 $ bash tests/container/run.sh
@@ -61,6 +71,7 @@ $ bash tests/container/run.sh
 Run a specific Ubuntu version:
 
 ```bash
+$ bash tests/container/run.sh 24.04
 $ bash tests/container/run.sh 22.04
 ```
 
@@ -69,7 +80,7 @@ playbook, verifies expected state with Ansible assertions, runs the playbook a
 second time, and fails unless the second run reports `changed=0` and `failed=0`.
 
 Desktop-specific GNOME behavior should be tested in a disposable Ubuntu Desktop
-VM. Create a Multipass-backed Ubuntu 24.04 GNOME VM with:
+VM. Create a Multipass-backed Ubuntu 26.04 GNOME VM with:
 
 ```bash
 $ bash tests/vm/run.sh
@@ -78,15 +89,18 @@ $ bash tests/vm/run.sh
 Create a VM for another supported Ubuntu release with:
 
 ```bash
-$ bash tests/vm/run.sh 22.04
+$ bash tests/vm/run.sh 24.04
 ```
 
 The VM helper uses official Ubuntu Multipass images, installs the GNOME desktop
 and RDP access, copies a clean snapshot of this repository into the guest, and
-prints the login details plus the next commands to run. It intentionally does
-not mount the host checkout, so desktop test runs cannot change the local
-workstation setup or the local repository. Use `tests/manual/gnome-vm.md` for
-the manual pass/fail checklist.
+prints the login details plus the next commands to run. Ubuntu 26.04 uses GNOME
+Remote Desktop and a Wayland session; 22.04 and 24.04 retain the xrdp path. The
+helper intentionally does not mount the host checkout, so desktop test runs
+cannot change the local workstation setup or repository. Use
+`tests/manual/gnome-vm.md` for desktop checks and
+`tests/manual/ubuntu-2604.md` for the full 26.04 release gate.
+
 On headless or non-GNOME Ubuntu hosts, GNOME-only customization tasks are
 skipped automatically with a clear message.
 

@@ -17,6 +17,7 @@ homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/in
 homebrew_prefix: /opt/homebrew
 homebrew_update: false
 backup_existing_dotfiles: true
+allow_unsupported_ubuntu_version: false
 install_docker: true
 install_google_chrome: true
 install_llm_clis: true
