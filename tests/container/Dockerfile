@@ -1,6 +1,7 @@
-ARG UBUNTU_VERSION=24.04
+ARG UBUNTU_VERSION=26.04
 FROM ubuntu:${UBUNTU_VERSION}
 
+ARG UBUNTU_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
@@ -9,7 +10,9 @@ RUN apt-get update \
         git \
         python3 \
         python3-pip \
-        sudo \
+    && if [ "${UBUNTU_VERSION}" = "26.04" ]; then \
+        apt-get install -y --no-install-recommends sudo-rs; \
+    else apt-get install -y --no-install-recommends sudo; fi \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd --create-home --shell /bin/bash devtester \

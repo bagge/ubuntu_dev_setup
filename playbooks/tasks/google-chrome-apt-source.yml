@@ -1,93 +1,17 @@
 ---
-- name: Check Google Chrome apt repository list on Ubuntu
-  ansible.builtin.stat:
-    path: "{{ google_chrome_apt_list_path }}"
-  register: google_chrome_apt_list
-
-- name: Check Google Chrome deb822 apt repository on Ubuntu
-  ansible.builtin.stat:
-    path: "{{ google_chrome_apt_sources_path }}"
-  register: google_chrome_apt_sources
-
-- name: Read Google Chrome apt repository list on Ubuntu
-  ansible.builtin.slurp:
-    src: "{{ google_chrome_apt_list_path }}"
-  register: google_chrome_apt_list_content
-  when: google_chrome_apt_list.stat.exists | default(false)
-
-- name: Collect Google Chrome apt repository lines on Ubuntu
-  ansible.builtin.set_fact:
-    google_chrome_active_apt_repo_lines: >-
-      {{
-        (
-          (google_chrome_apt_list_content.content | default('') | b64decode)
-          .splitlines()
-        )
-        | select('match', google_chrome_apt_repo_line_pattern)
-        | list
-      }}
-
-- name: Classify Google Chrome apt repository lines on Ubuntu
-  ansible.builtin.set_fact:
-    google_chrome_signed_apt_repo_lines: >-
-      {{
-        google_chrome_active_apt_repo_lines | default([])
-        | select('search', 'signed-by=')
-        | list
-      }}
-    google_chrome_unsigned_apt_repo_lines: >-
-      {{
-        google_chrome_active_apt_repo_lines | default([])
-        | reject('search', 'signed-by=')
-        | list
-      }}
-
-- name: Decide how to manage Google Chrome apt source on Ubuntu
-  ansible.builtin.set_fact:
-    preserve_google_chrome_unsigned_apt_source: >-
-      {{
-        (google_chrome_unsigned_apt_repo_lines | default([]) | length) > 0
-      }}
-    normalize_google_chrome_apt_source: >-
-      {{
-        (
-          install_google_chrome | bool
-          or google_chrome_apt_list.stat.exists | default(false)
-          or google_chrome_apt_sources.stat.exists | default(false)
-        )
-        and not (
-          (google_chrome_unsigned_apt_repo_lines | default([]) | length) > 0
-        )
-      }}
-
-- name: Remove signed-by Google Chrome apt repository duplicate on Ubuntu
-  become: "{{ google_chrome_apt_source_become | default(true) }}"
-  ansible.builtin.lineinfile:
-    path: "{{ google_chrome_apt_list_path }}"
-    regexp: "{{ google_chrome_signed_apt_repo_line_pattern }}"
-    state: absent
-  when:
-    - preserve_google_chrome_unsigned_apt_source | default(false) | bool
-    - (google_chrome_signed_apt_repo_lines | default([]) | length) > 0
-
-- name: Remove conflicting Google Chrome deb822 apt repository on Ubuntu
+- name: Create Google Chrome apt keyring directory on Ubuntu
   become: "{{ google_chrome_apt_source_become | default(true) }}"
   ansible.builtin.file:
-    path: "{{ google_chrome_apt_sources_path }}"
-    state: absent
-  when:
-    - >-
-      normalize_google_chrome_apt_source | default(false) | bool
-      or preserve_google_chrome_unsigned_apt_source | default(false) | bool
-    - google_chrome_apt_sources.stat.exists | default(false)
+    path: "{{ google_chrome_keyring_path | dirname }}"
+    state: directory
+    mode: "0755"
 
-- name: Add Google Chrome signing key on Ubuntu
+- name: Download Google Chrome signing key on Ubuntu
   become: "{{ google_chrome_apt_source_become | default(true) }}"
-  ansible.builtin.apt_key:
-    url: https://dl.google.com/linux/linux_signing_key.pub
-    keyring: "{{ google_chrome_keyring_path }}"
-    state: present
-  when: normalize_google_chrome_apt_source | default(false) | bool
+  ansible.builtin.get_url:
+    url: "{{ google_chrome_signing_key_url }}"
+    dest: "{{ google_chrome_keyring_path }}"
+    mode: "0644"
 
 - name: Disable Google Chrome automatic apt source management on Ubuntu
   become: "{{ google_chrome_apt_source_become | default(true) }}"
@@ -97,14 +21,28 @@
       repo_add_once="false"
       repo_reenable_on_distupgrade="false"
     mode: "0644"
-  when: normalize_google_chrome_apt_source | default(false) | bool
 
-- name: Normalize Google Chrome apt repository list on Ubuntu
+- name: Remove legacy Google Chrome apt repository list on Ubuntu
+  become: "{{ google_chrome_apt_source_become | default(true) }}"
+  ansible.builtin.file:
+    path: "{{ google_chrome_apt_list_path }}"
+    state: absent
+
+- name: Remove legacy Google Chrome binary keyring on Ubuntu
+  become: "{{ google_chrome_apt_source_become | default(true) }}"
+  ansible.builtin.file:
+    path: "{{ google_chrome_legacy_keyring_path }}"
+    state: absent
+
+- name: Manage Google Chrome deb822 apt repository on Ubuntu
   become: "{{ google_chrome_apt_source_become | default(true) }}"
   ansible.builtin.copy:
-    dest: "{{ google_chrome_apt_list_path }}"
+    dest: "{{ google_chrome_apt_sources_path }}"
     content: |
-      ### THIS FILE IS MANAGED BY ANSIBLE ###
-      {{ google_chrome_apt_repo }}
+      Types: deb
+      URIs: https://dl.google.com/linux/chrome/deb/
+      Suites: stable
+      Components: main
+      Architectures: amd64
+      Signed-By: {{ google_chrome_keyring_path }}
     mode: "0644"
-  when: normalize_google_chrome_apt_source | default(false) | bool

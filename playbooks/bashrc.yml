@@ -53,7 +53,7 @@
         - macos_set_login_shell | bool
 
     - name: Read current login shell on macOS
-      ansible.builtin.command: dscl . -read "/Users/{{ ansible_user_id }}" UserShell
+      ansible.builtin.command: dscl . -read "/Users/{{ ansible_facts.user_id }}" UserShell
       register: macos_login_shell
       changed_when: false
       when:
@@ -62,7 +62,7 @@
 
     - name: Set Homebrew Bash as login shell on macOS
       become: true
-      ansible.builtin.command: chsh -s "{{ homebrew_prefix }}/bin/bash" "{{ ansible_user_id }}"
+      ansible.builtin.command: chsh -s "{{ homebrew_prefix }}/bin/bash" "{{ ansible_facts.user_id }}"
       changed_when: true
       when:
         - dev_setup_platform == 'macos'

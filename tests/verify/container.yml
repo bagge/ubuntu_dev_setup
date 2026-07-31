@@ -202,69 +202,51 @@
         - python3-psutil
         - ranger
 
-    - name: Check Google Chrome deb822 apt repository
-      ansible.builtin.stat:
-        path: /etc/apt/sources.list.d/google-chrome.sources
-      register: google_chrome_apt_sources
-      when: install_google_chrome | bool
-
-    - name: Read Google Chrome apt repository list
+    - name: Read Google Chrome deb822 apt repository
       ansible.builtin.slurp:
-        src: /etc/apt/sources.list.d/google-chrome.list
-      register: google_chrome_apt_list
+        src: /etc/apt/sources.list.d/google-chrome.sources
+      register: google_chrome_apt_source
       when: install_google_chrome | bool
 
-    - name: Check Google Chrome apt defaults
+    - name: Check legacy Google Chrome apt repository list
       ansible.builtin.stat:
-        path: /etc/default/google-chrome
-      register: google_chrome_default_file
+        path: /etc/apt/sources.list.d/google-chrome.list
+      register: google_chrome_legacy_apt_list
+      when: install_google_chrome | bool
+
+    - name: Check Google Chrome signing key
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/google-chrome.asc
+      register: google_chrome_signing_key
       when: install_google_chrome | bool
 
     - name: Read Google Chrome apt defaults
       ansible.builtin.slurp:
         src: /etc/default/google-chrome
       register: google_chrome_default
-      when:
-        - install_google_chrome | bool
-        - google_chrome_default_file.stat.exists
+      when: install_google_chrome | bool
 
     - name: Assert Google Chrome apt source is valid
       ansible.builtin.assert:
         that:
           - "'google-chrome-stable' in ansible_facts.packages"
-          - not google_chrome_apt_sources.stat.exists
-          - google_chrome_apt_repo_lines | length == 1
+          - not google_chrome_legacy_apt_list.stat.exists
+          - google_chrome_signing_key.stat.exists
+          - google_chrome_signing_key.stat.size > 0
+          - google_chrome_apt_source_content == google_chrome_expected_apt_source
           - >-
-            google_chrome_signed_repo_lines | length == 1
-            or google_chrome_unsigned_repo_lines | length == 1
+            'repo_add_once="false"' in google_chrome_defaults
           - >-
-            google_chrome_unsigned_repo_lines | length == 1
-            or 'repo_add_once="false"' in google_chrome_defaults
-          - >-
-            google_chrome_unsigned_repo_lines | length == 1
-            or 'repo_reenable_on_distupgrade="false"' in google_chrome_defaults
+            'repo_reenable_on_distupgrade="false"' in google_chrome_defaults
       vars:
-        google_chrome_repo_line_pattern: >-
-          ^\s*deb\s+(\[[^]]*\]\s+)?https?://dl\.google\.com/linux/chrome/deb/?\s+stable\s+main\s*$
-        google_chrome_apt_lines: "{{ (google_chrome_apt_list.content | b64decode).splitlines() }}"
-        google_chrome_apt_repo_lines: >-
-          {{
-            google_chrome_apt_lines
-            | select('match', google_chrome_repo_line_pattern)
-            | list
-          }}
-        google_chrome_signed_repo_lines: >-
-          {{
-            google_chrome_apt_repo_lines
-            | select('search', 'signed-by=')
-            | list
-          }}
-        google_chrome_unsigned_repo_lines: >-
-          {{
-            google_chrome_apt_repo_lines
-            | reject('search', 'signed-by=')
-            | list
-          }}
+        google_chrome_apt_source_content: "{{ google_chrome_apt_source.content | b64decode }}"
+        google_chrome_expected_apt_source: |
+          Types: deb
+          URIs: https://dl.google.com/linux/chrome/deb/
+          Suites: stable
+          Components: main
+          Architectures: amd64
+          Signed-By: /etc/apt/keyrings/google-chrome.asc
         google_chrome_defaults: "{{ google_chrome_default.content | default('') | b64decode }}"
       when: install_google_chrome | bool
 

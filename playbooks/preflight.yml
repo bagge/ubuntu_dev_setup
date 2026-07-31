@@ -3,6 +3,10 @@
   hosts: all
   tags: always
   vars:
+    dev_setup_supported_ubuntu_versions:
+      - "22.04"
+      - "24.04"
+      - "26.04"
     dev_setup_artifact_map:
       ubuntu_amd64:
         bazel_buildtools_target: linux-amd64
@@ -51,6 +55,19 @@
           Unsupported platform: {{ ansible_facts.system }} {{ ansible_facts.distribution | default('') }}
           {{ ansible_facts.architecture }}. Supported platforms are Ubuntu amd64 and
           macOS Apple Silicon.
+
+    - name: Assert supported Ubuntu release
+      ansible.builtin.assert:
+        that:
+          - >-
+            ansible_facts.distribution_version in dev_setup_supported_ubuntu_versions
+            or allow_unsupported_ubuntu_version | default(false) | bool
+        fail_msg: >-
+          Unsupported Ubuntu release {{ ansible_facts.distribution_version }}.
+          Supported Ubuntu releases are
+          {{ dev_setup_supported_ubuntu_versions | join(', ') }}. Set
+          allow_unsupported_ubuntu_version=true to continue without tested support.
+      when: dev_setup_platform == 'ubuntu'
 
     - name: Set platform artifact names
       ansible.builtin.set_fact:

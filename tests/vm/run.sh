@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-ubuntu_version="24.04"
+ubuntu_version="26.04"
 name=""
 cpus="4"
 memory="6G"
@@ -14,7 +14,7 @@ sync_only=false
 
 usage() {
     cat <<'USAGE'
-Usage: bash tests/vm/run.sh [options] [22.04|24.04]
+Usage: bash tests/vm/run.sh [options] [22.04|24.04|26.04]
 
 Create a Multipass Ubuntu GNOME VM for manual desktop testing.
 
@@ -79,7 +79,7 @@ while [[ $# -gt 0 ]]; do
             usage
             exit 0
             ;;
-        22.04 | 24.04)
+        22.04 | 24.04 | 26.04)
             ubuntu_version="$1"
             shift
             ;;
@@ -137,13 +137,45 @@ create_cloud_init() {
     local password="$1"
     local cloud_init="$2"
 
-    # ubuntu-desktop is installed post-launch (install_desktop) to avoid
-    # multipass launch timeouts. Two mitigations are applied here:
-    #  1. write_files prevents NetworkManager from taking over the
-    #     cloud-init-managed network interface.
-    #  2. runcmd pre-upgrades systemd so that the daemon-reexec happens
-    #     now (during cloud-init, when multipass is not monitoring SSH)
-    #     rather than during the ubuntu-desktop install.
+    if [[ "${ubuntu_version}" == "26.04" ]]; then
+        cat >"${cloud_init}" <<EOF
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - dbus-x11
+  - dconf-cli
+  - git
+  - gnome-remote-desktop
+  - gnome-shell-extensions
+  - openssl
+  - python3-pip
+  - shellcheck
+write_files:
+  - path: /etc/NetworkManager/conf.d/90-cloud-init-unmanaged.conf
+    content: |
+      [main]
+      plugins=keyfile
+      [keyfile]
+      unmanaged-devices=type:ethernet
+  - path: /etc/netplan/99-keep-networkd.yaml
+    content: |
+      network:
+        version: 2
+        renderer: networkd
+chpasswd:
+  expire: false
+  users:
+    - name: ubuntu
+      password: "${password}"
+      type: text
+runcmd:
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y systemd
+  - PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install ansible
+EOF
+        return
+    fi
+
     cat >"${cloud_init}" <<EOF
 #cloud-config
 package_update: true
@@ -233,6 +265,55 @@ install_desktop() {
     wait_for_ssh
 }
 
+configure_gnome_remote_desktop() {
+    [[ "${ubuntu_version}" == "26.04" ]] || return 0
+
+    echo "Configuring GNOME Remote Desktop..." >&2
+    multipass exec "${name}" -- sudo bash -s -- "${password}" <<'GUEST'
+set -euo pipefail
+
+rdp_password="$1"
+tls_dir=/etc/gnome-remote-desktop
+tls_cert="${tls_dir}/rdp-tls.crt"
+tls_key="${tls_dir}/rdp-tls.key"
+
+install -d -o gnome-remote-desktop -g gnome-remote-desktop -m 0755 "${tls_dir}"
+if [[ ! -s "${tls_cert}" || ! -s "${tls_key}" ]]; then
+    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+        -subj /CN=ubuntu-dev-setup-gnome \
+        -keyout "${tls_key}" \
+        -out "${tls_cert}"
+fi
+chown gnome-remote-desktop:gnome-remote-desktop "${tls_cert}" "${tls_key}"
+chmod 0644 "${tls_cert}"
+chmod 0600 "${tls_key}"
+
+grdctl --system --headless rdp set-tls-cert "${tls_cert}"
+grdctl --system --headless rdp set-tls-key "${tls_key}"
+grdctl --system --headless rdp set-credentials ubuntu "${rdp_password}"
+grdctl --system --headless rdp set-port 3389
+grdctl --system --headless rdp disable-port-negotiation
+grdctl --system --headless rdp disable-view-only
+grdctl --system --headless rdp enable
+systemctl enable --now gnome-remote-desktop.service
+GUEST
+}
+
+wait_for_rdp() {
+    local max_attempts=30
+    local attempt=0
+
+    while ! multipass exec "${name}" -- bash -c \
+        'ss -H -ltn | grep -q ":3389 "' >/dev/null 2>&1; do
+        attempt=$((attempt + 1))
+        if [[ "${attempt}" -ge "${max_attempts}" ]]; then
+            fail "RDP service did not listen on port 3389 after ${max_attempts} attempts"
+        fi
+        echo "Waiting for RDP service... (${attempt}/${max_attempts})" >&2
+        sleep 2
+    done
+}
+
 sync_repo() {
     local archive
     mkdir -p "${runtime_dir}"
@@ -310,10 +391,18 @@ fi
 
 sync_repo
 prepare_repo
+configure_gnome_remote_desktop
+wait_for_rdp
 
 ip_address="$(multipass info "${name}" | awk '/IPv4/ { print $2; exit }')"
 if [[ -z "${ip_address}" ]]; then
     fail "could not determine VM IPv4 address"
+fi
+
+if [[ "${ubuntu_version}" == "26.04" ]]; then
+    rdp_backend="GNOME Remote Desktop (Wayland)"
+else
+    rdp_backend="xrdp"
 fi
 
 cat <<EOF
@@ -323,6 +412,7 @@ Name: ${name}
 Ubuntu: ${ubuntu_version}
 Address: ${ip_address}
 RDP: ${ip_address}:3389
+RDP backend: ${rdp_backend}
 Username: ubuntu
 Password: ${password}
 

@@ -45,6 +45,16 @@ sudo -H -u devtester env \
     cd /workspace
     ansible-galaxy collection install -r requirements.yml
     ansible-playbook setup.yml --syntax-check --extra-vars "${TEST_EXTRA_VARS}"
+    unsupported_facts="{\"ansible_facts\":{\"system\":\"Linux\",\"distribution\":\"Ubuntu\",\"distribution_version\":\"25.10\",\"architecture\":\"x86_64\"}}"
+    if ansible-playbook playbooks/preflight.yml --extra-vars "${unsupported_facts}" >/tmp/unsupported-release.log 2>&1; then
+        echo "expected unsupported Ubuntu release preflight to fail" >&2
+        exit 1
+    fi
+    grep -F "Unsupported Ubuntu release 25.10" /tmp/unsupported-release.log
+    ansible-playbook playbooks/preflight.yml \
+        --extra-vars "${unsupported_facts}" \
+        --extra-vars allow_unsupported_ubuntu_version=true \
+        >/tmp/unsupported-release-override.log
     ansible-playbook setup.yml --extra-vars "${TEST_EXTRA_VARS}"
     ansible-playbook setup.yml --tags gnome-customization,kitty --extra-vars "${TEST_EXTRA_VARS} run_desktop_customization=true" | tee /tmp/headless-desktop.log
     grep -F "Skipping Ubuntu GNOME customization because no usable graphical GNOME session was detected." /tmp/headless-desktop.log

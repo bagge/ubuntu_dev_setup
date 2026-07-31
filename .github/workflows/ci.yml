@@ -40,7 +40,7 @@ jobs:
   container-integration:
     strategy:
       matrix:
-        ubuntu-version: ["22.04", "24.04"]
+        ubuntu-version: ["22.04", "24.04", "26.04"]
     runs-on: ubuntu-latest
 
     steps:

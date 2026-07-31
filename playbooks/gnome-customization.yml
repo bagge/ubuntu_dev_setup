@@ -16,7 +16,10 @@
               or 'gnome' in ansible_facts.env.XDG_SESSION_DESKTOP | default('') | lower
               or 'gnome' in ansible_facts.env.DESKTOP_SESSION | default('') | lower
             )
-            and ansible_facts.env.DISPLAY | default('') | length > 0
+            and (
+              ansible_facts.env.DISPLAY | default('') | length > 0
+              or ansible_facts.env.WAYLAND_DISPLAY | default('') | length > 0
+            )
             and ansible_facts.env.DBUS_SESSION_BUS_ADDRESS | default('') | length > 0
           }}
       when: dev_setup_platform == 'ubuntu'
