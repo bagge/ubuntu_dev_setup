@@ -45,7 +45,7 @@ $ ansible-playbook setup.yml --extra-vars "replace_existing_dotfiles=true backup
 
 Supported platforms:
 - Ubuntu 22.04, 24.04, and 26.04 on amd64
-- macOS on Apple Silicon
+- macOS 13 Ventura or newer on Apple Silicon
 
 Other Ubuntu releases fail during preflight because they are not covered by the
 integration matrix. To intentionally run without tested release support, use:
