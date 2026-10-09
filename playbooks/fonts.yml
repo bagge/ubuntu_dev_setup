@@ -27,12 +27,36 @@
         mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 
+    - name: Check installed Hack Nerd Font on Ubuntu
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.local/share/fonts/HackNerdFont-Regular.ttf"
+      register: nerd_fonts_hack_regular
+      when: dev_setup_platform == 'ubuntu'
+
+    - name: Read installed Hack Nerd Font version on Ubuntu
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts.env.HOME }}/.local/share/fonts/.hack-nerd-font-version"
+      register: nerd_fonts_version_marker
+      failed_when: false
+      when: dev_setup_platform == 'ubuntu'
+
     - name: Extract fonts on Ubuntu
       ansible.builtin.unarchive:
         src: "{{ inventory_dir }}/tarballs/Hack.zip"
         dest: "{{ ansible_facts.env.HOME }}/.local/share/fonts"
         remote_src: true
-        creates: "{{ ansible_facts.env.HOME }}/.local/share/fonts/HackNerdFont-Regular.ttf"
+      when:
+        - dev_setup_platform == 'ubuntu'
+        - >-
+          not nerd_fonts_hack_regular.stat.exists
+          or nerd_fonts_version_marker.content is not defined
+          or (nerd_fonts_version_marker.content | b64decode | trim) != nerd_fonts_version
+
+    - name: Write installed Hack Nerd Font version on Ubuntu
+      ansible.builtin.copy:
+        content: "{{ nerd_fonts_version }}"
+        dest: "{{ ansible_facts.env.HOME }}/.local/share/fonts/.hack-nerd-font-version"
+        mode: "0644"
       when: dev_setup_platform == 'ubuntu'
 
     - name: Update font cache on Ubuntu

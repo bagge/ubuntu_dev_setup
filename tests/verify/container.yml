@@ -83,6 +83,22 @@
           - kitty_tab_bar_link.stat.lnk_source == inventory_dir + "/kitty-tab-bar.py"
           - "'tab_bar_style custom' in (kitty_config.content | b64decode).splitlines()"
 
+    - name: Check installed Hack Nerd Font
+      ansible.builtin.stat:
+        path: "{{ ansible_facts.env.HOME }}/.local/share/fonts/HackNerdFont-Regular.ttf"
+      register: nerd_fonts_hack_regular
+
+    - name: Read installed Hack Nerd Font version
+      ansible.builtin.slurp:
+        src: "{{ ansible_facts.env.HOME }}/.local/share/fonts/.hack-nerd-font-version"
+      register: nerd_fonts_version_marker
+
+    - name: Assert Hack Nerd Font version
+      ansible.builtin.assert:
+        that:
+          - nerd_fonts_hack_regular.stat.exists
+          - (nerd_fonts_version_marker.content | b64decode | trim) == nerd_fonts_version
+
     - name: Check managed Vale configuration symlink
       ansible.builtin.stat:
         path: "{{ ansible_facts.env.HOME }}/.config/vale/.vale.ini"
