@@ -3,6 +3,7 @@
   hosts: all
   tags: always
   vars:
+    dev_setup_minimum_macos_version: "13.0"
     dev_setup_supported_ubuntu_versions:
       - "22.04"
       - "24.04"
@@ -68,6 +69,15 @@
           {{ dev_setup_supported_ubuntu_versions | join(', ') }}. Set
           allow_unsupported_ubuntu_version=true to continue without tested support.
       when: dev_setup_platform == 'ubuntu'
+
+    - name: Assert supported macOS release
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution_version is version(dev_setup_minimum_macos_version, '>=')
+        fail_msg: >-
+          Unsupported macOS release {{ ansible_facts.distribution_version }}.
+          macOS {{ dev_setup_minimum_macos_version }} or newer is required.
+      when: dev_setup_platform == 'macos'
 
     - name: Set platform artifact names
       ansible.builtin.set_fact:

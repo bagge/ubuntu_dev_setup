@@ -55,6 +55,12 @@ sudo -H -u devtester env \
         --extra-vars "${unsupported_facts}" \
         --extra-vars allow_unsupported_ubuntu_version=true \
         >/tmp/unsupported-release-override.log
+    unsupported_macos_facts="{\"ansible_facts\":{\"system\":\"Darwin\",\"distribution\":\"MacOSX\",\"distribution_version\":\"12.7.6\",\"architecture\":\"arm64\"}}"
+    if ansible-playbook playbooks/preflight.yml --extra-vars "${unsupported_macos_facts}" >/tmp/unsupported-macos-release.log 2>&1; then
+        echo "expected unsupported macOS release preflight to fail" >&2
+        exit 1
+    fi
+    grep -F "Unsupported macOS release 12.7.6" /tmp/unsupported-macos-release.log
     ansible-playbook setup.yml --extra-vars "${TEST_EXTRA_VARS}"
     ansible-playbook setup.yml --tags gnome-customization,kitty --extra-vars "${TEST_EXTRA_VARS} run_desktop_customization=true" | tee /tmp/headless-desktop.log
     grep -F "Skipping Ubuntu GNOME customization because no usable graphical GNOME session was detected." /tmp/headless-desktop.log
