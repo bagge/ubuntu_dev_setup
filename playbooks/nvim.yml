@@ -75,6 +75,7 @@
         - hunspell-en-us
         - hunspell-sv
         - hunspell-tools
+        - libatomic1
         - libclang-dev
         - python3-venv
         - ripgrep
