@@ -3,7 +3,7 @@
   hosts: all
   tags: always
   vars:
-    dev_setup_minimum_macos_version: "13.0"
+    dev_setup_minimum_macos_version: "13.5"
     dev_setup_supported_ubuntu_versions:
       - "22.04"
       - "24.04"
